@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>VAFF - Classement</title>
+    <link rel="icon" type="image/gif" href="/assets/favicon.ico" />
+    <link rel="stylesheet" href="/assets/bootstrap.min.css">    
+  </head>
+  <body>
+    <p class="text-center h1">Classement {{.tournament.Name}}</p>
+    <table class="table table-striped">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Equipe</th>
+          <th scope="col">Victoires</th>
+          <th scope="col">Nul</th>
+          <th scope="col">Défaites</th>
+          <th scope="col">Buts</th>
+          <th scope="col">Diff</th>
+          <th scope="col">Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .ranking}}
+        <tr>
+          <td>{{.Rank}}</td>
+          <td>{{.Name}}</td>
+          <td>{{.Wins}}</td>
+          <td>{{.Draws}}</td>
+          <td>{{.Defeats}}</td>
+          <td>{{.Goals}}</td>
+          <td>{{.GoalBalance}}</td>
+          <td>{{.Points}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+
+  </body>
+</html>

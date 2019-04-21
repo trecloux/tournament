@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>VAFF - Rencontres</title>
+    <link rel="icon" type="image/gif" href="/assets/favicon.ico" />
+    <link rel="stylesheet" href="/assets/bootstrap.min.css">    
+  </head>
+  <body>
+    <p class="text-center h1">Rencontres {{.tournament.Name}}</p>
+    <table class="table table-striped">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">Heure</th>
+          <th scope="col">Equipe</th>
+          <th scope="col">Equipe</th>
+          <th scope="col">Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .fixtures}}
+        <tr>
+          <th scope="row">{{.ScheduledAt.Format "15:04"}}</th>
+          <td>{{.HomeTeamName}}</td>
+          <td>{{.AwayTeamName}}</td>
+          {{if .HomeTeamGoals.Valid }}
+          <td>{{.HomeTeamGoals.Int64}} - {{.AwayTeamGoals.Int64}}</td>
+          {{else}}
+          <td>&nbsp;</td>
+          {{end}}
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+
+  </body>
+</html>
