@@ -1,11 +1,4 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>VAFF - Rencontres</title>
-    <link rel="icon" type="image/gif" href="/assets/favicon.ico" />
-    <link rel="stylesheet" href="/assets/bootstrap.min.css">    
-  </head>
-  <body>
+{{define "content"}}
     <p class="text-center h1">Rencontres {{.tournament.Name}}</p>
     <table class="table table-striped">
       <thead class="thead-dark">
@@ -24,8 +17,8 @@
           <td>{{.VisitorTeamName}}</td>
           <td>
             <form method="POST" action="/tournaments/{{$.tournament.ID}}/fixtures/{{.ID}}/score">
-              <input type="text" name="homeTeamGoals" value="{{if .HomeTeamGoals.Valid }}{{.HomeTeamGoals.Int64}}{{end}}">
-              <input type="text" name="visitorTeamGoals" value="{{if .VisitorTeamGoals.Valid }}{{.VisitorTeamGoals.Int64}}{{end}}">
+              <input type="number" class="mb-2" maxlength="2" name="homeTeamGoals" value="{{if .HomeTeamGoals.Valid }}{{.HomeTeamGoals.Int64}}{{end}}">
+              <input type="number" class="mb-2" maxlength="2" name="visitorTeamGoals" value="{{if .VisitorTeamGoals.Valid }}{{.VisitorTeamGoals.Int64}}{{end}}">
               <input type="submit" class="btn btn-primary" value="Valider">
             </form>
           </td>
@@ -33,6 +26,4 @@
         {{end}}
       </tbody>
     </table>
-
-  </body>
-</html>
+{{end}}

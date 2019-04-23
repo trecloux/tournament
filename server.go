@@ -50,13 +50,13 @@ func main() {
 func index(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournaments := selectTournaments(db)
-		return c.Render(http.StatusOK, "index.html", echo.Map{"tournaments": tournaments})
+		return c.Render(http.StatusOK, "index", echo.Map{"title": "Tounois", "tournaments": tournaments})
 	}
 }
 func admin(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournaments := selectTournaments(db)
-		return c.Render(http.StatusOK, "admin.html", echo.Map{"tournaments": tournaments})
+		return c.Render(http.StatusOK, "admin", echo.Map{"title": "Admin", "tournaments": tournaments})
 	}
 }
 func adminFixtures(db *sql.DB) echo.HandlerFunc {
@@ -64,7 +64,7 @@ func adminFixtures(db *sql.DB) echo.HandlerFunc {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
 		fixtures := selectFixtures(db, tournamentID)
-		return c.Render(http.StatusOK, "fixtures_admin.html", echo.Map{"tournament": tournament, "fixtures": fixtures})
+		return c.Render(http.StatusOK, "fixtures_admin", echo.Map{"title": "Scores", "tournament": tournament, "fixtures": fixtures})
 	}
 }
 func getFixtures(db *sql.DB) echo.HandlerFunc {
@@ -72,7 +72,7 @@ func getFixtures(db *sql.DB) echo.HandlerFunc {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
 		fixtures := selectFixtures(db, tournamentID)
-		return c.Render(http.StatusOK, "fixtures.html", echo.Map{"tournament": tournament, "fixtures": fixtures})
+		return c.Render(http.StatusOK, "fixtures", echo.Map{"title": "Rencontres", "tournament": tournament, "fixtures": fixtures})
 	}
 }
 func getRanking(db *sql.DB) echo.HandlerFunc {
@@ -80,7 +80,7 @@ func getRanking(db *sql.DB) echo.HandlerFunc {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
 		ranking := selectTournamentRanking(db, tournamentID)
-		return c.Render(http.StatusOK, "ranking.html", echo.Map{"tournament": tournament, "ranking": ranking})
+		return c.Render(http.StatusOK, "ranking", echo.Map{"title": "Classeement", "tournament": tournament, "ranking": ranking})
 	}
 }
 func removeTournament(db *sql.DB) echo.HandlerFunc {

@@ -1,11 +1,4 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>VAFF - Tournois</title>
-    <link rel="icon" type="image/gif" href="/assets/favicon.ico" />
-    <link rel="stylesheet" href="/assets/bootstrap.min.css">    
-  </head>
-  <body>
+{{define "content"}}
     <p class="text-center h1">Tournois</p>
     <div>
       <table class="table table-striped">
@@ -13,7 +6,7 @@
           <tr>
             <th scope="col">Tournoi</th>
             <th scope="col">Nom</th>
-            <th scope="col">Rencontres</th>
+            <th scope="col">Scores</th>
             <th scope="col">Classement</th>
             <th scope="col">Supprimer</th>
           </tr>
@@ -23,7 +16,7 @@
             <tr>
               <th scope="row">{{.ID}}</th>
               <td>{{.Name}}</td>
-              <td><a href="/tournaments/{{.ID}}/fixtures">Rencontres</a></td>
+              <td><a href="/admin/tournaments/{{.ID}}/fixtures">Scores</a></td>
               <td><a href="/tournaments/{{.ID}}/ranking">Classement</a></td>
               <td>
                 <form method="POST" action="/tournaments/{{.ID}}">
@@ -68,5 +61,4 @@
         </form>
       </td>
     </div>
-  </body>
-</html>
+{{end}}

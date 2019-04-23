@@ -1,34 +1,26 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>VAFF - Tournois</title>
-    <link rel="icon" type="image/gif" href="/assets/favicon.ico" />
-    <link rel="stylesheet" href="/assets/bootstrap.min.css">    
-  </head>
-  <body>
-    <p class="text-center h1">Tournois</p>
-    <hr>
-    <div>
-      <table class="table table-striped">
-          <thead class="thead-dark">
-            <tr>
-              <th scope="col">Tournoi</th>
-              <th scope="col">Nom</th>
-              <th scope="col">Rencontres</th>
-              <th scope="col">Classement</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{range .tournaments}}
-            <tr>
-              <th scope="row">{{.ID}}</th>
-              <td>{{.Name}}</td>
-              <td><a href="/tournaments/{{.ID}}/fixtures">Rencontres</a></td>
-              <td><a href="/tournaments/{{.ID}}/ranking">Classement</a></td>
-            </tr>
-            {{end}}
-          </tbody>
-        </table>      
-    </div>
-  </body>
-</html>
+{{define "content"}}
+  <p class="text-center h1">Tournois</p>
+  <hr>
+  <div>
+    <table class="table table-striped">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col">Tournoi</th>
+            <th scope="col">Nom</th>
+            <th scope="col">Rencontres</th>
+            <th scope="col">Classement</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .tournaments}}
+          <tr>
+            <th scope="row">{{.ID}}</th>
+            <td>{{.Name}}</td>
+            <td><a href="/tournaments/{{.ID}}/fixtures">Rencontres</a></td>
+            <td><a href="/tournaments/{{.ID}}/ranking">Classement</a></td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>      
+  </div>
+{{end}}

@@ -1,11 +1,4 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>VAFF - Classement</title>
-    <link rel="icon" type="image/gif" href="/assets/favicon.ico" />
-    <link rel="stylesheet" href="/assets/bootstrap.min.css">    
-  </head>
-  <body>
+{{define "content"}}
     <p class="text-center h1">Classement {{.tournament.Name}}</p>
     <table class="table table-striped">
       <thead class="thead-dark">
@@ -35,6 +28,4 @@
         {{end}}
       </tbody>
     </table>
-
-  </body>
-</html>
+{{end}}
