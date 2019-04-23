@@ -22,11 +22,13 @@
           <th scope="row">{{.ScheduledAt.Format "15:04"}}</th>
           <td>{{.HomeTeamName}}</td>
           <td>{{.VisitorTeamName}}</td>
-          {{if .HomeTeamGoals.Valid }}
-          <td>{{.HomeTeamGoals.Int64}} - {{.VisitorTeamGoals.Int64}}</td>
-          {{else}}
-          <td>&nbsp;</td>
-          {{end}}
+          <td>
+            <form method="POST" action="/tournaments/{{$.tournament.ID}}/fixtures/{{.ID}}/score">
+              <input type="text" name="homeTeamGoals" value="{{if .HomeTeamGoals.Valid }}{{.HomeTeamGoals.Int64}}{{end}}">
+              <input type="text" name="visitorTeamGoals" value="{{if .VisitorTeamGoals.Valid }}{{.VisitorTeamGoals.Int64}}{{end}}">
+              <input type="submit" class="btn btn-primary" value="Valider">
+            </form>
+          </td>
         </tr>
         {{end}}
       </tbody>

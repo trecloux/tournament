@@ -6,15 +6,28 @@ import (
 )
 
 type tournament struct {
-	Name string
+	ID              string
+	Name            string
+	pointsPerWin    float32
+	pointsPerDraw   float32
+	pointsPerDefeat float32
+	pointsPerGoal   float32
 }
 
 type fixture struct {
-	ScheduledAt   time.Time
-	HomeTeamName  string
-	AwayTeamName  string
-	HomeTeamGoals sql.NullInt64
-	AwayTeamGoals sql.NullInt64
+	ID               int
+	ScheduledAt      time.Time
+	HomeTeamName     string
+	HomeTeamID       int
+	VisitorTeamName  string
+	VisitorTeamID    int
+	HomeTeamGoals    sql.NullInt64
+	VisitorTeamGoals sql.NullInt64
+}
+
+type team struct {
+	ID   int
+	Name string
 }
 
 type teamRanking struct {

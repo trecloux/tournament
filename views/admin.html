@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>VAFF - Tournois</title>
+    <link rel="icon" type="image/gif" href="/assets/favicon.ico" />
+    <link rel="stylesheet" href="/assets/bootstrap.min.css">    
+  </head>
+  <body>
+    <p class="text-center h1">Tournois</p>
+    <div>
+      <table class="table table-striped">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col">Tournoi</th>
+            <th scope="col">Nom</th>
+            <th scope="col">Rencontres</th>
+            <th scope="col">Classement</th>
+            <th scope="col">Supprimer</th>
+          </tr>
+        </thead>
+        <tbody>
+            {{range .tournaments}}
+            <tr>
+              <th scope="row">{{.ID}}</th>
+              <td>{{.Name}}</td>
+              <td><a href="/tournaments/{{.ID}}/fixtures">Rencontres</a></td>
+              <td><a href="/tournaments/{{.ID}}/ranking">Classement</a></td>
+              <td>
+                <form method="POST" action="/tournaments/{{.ID}}">
+                  <input type="hidden" name="_method" value="DELETE">
+                  <input class="btn btn-danger" type="submit" value="Supprimer">
+                </form>
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>      
+      </div>
+      <div>
+        <p class="text-center h2">Créer un tournoi</p>
+        <form method="POST" action="/tournaments/{{.ID}}">
+          <div class="form-group">
+            <label for="id">Identifiant</label>
+            <input type="text" class="form-control" id="id" name="id" placeholder="Ex: MDP19U11">
+            <small id="idHelp" class="form-text text-muted">Clef utilisée dans les URLS.</small>
+          </div>
+          <div class="form-group">
+            <label for="name">Nom</label>
+            <input type="text" class="form-control" id="name" name="name" placeholder="Ex: U13">
+            <small id="nameHelp" class="form-text text-muted">Affiché sur les écrans de résultats et classements.</small>
+          </div>
+          <div class="form-group">
+            <label for="teams">Equipes</label>
+            <input type="text" class="form-control" id="teans" name="teams" placeholder="Ex: VAFF1,VAFF2,Leers OS,Reims">
+            <small id="teamsHelp" class="form-text text-muted">Noms des équipes séparés par une virgule.</small>
+          </div>
+          <div class="form-group">
+            <label for="duration">Durée</label>
+            <input type="number" class="form-control" id="duration" name="duration" placeholder="20">
+            <small id="durationHelp" class="form-text text-muted">Durée match + intermatch en minutes.</small>
+          </div>
+          <div class="form-group">
+            <label for="start">Début</label>
+            <input type="text" class="form-control" id="start" name="start" placeholder="Ex: 09:00">
+            <small id="startHelp" class="form-text text-muted">Heure de début du premier match.</small>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit</button>        </form>
+        </form>
+      </td>
+    </div>
+  </body>
+</html>
