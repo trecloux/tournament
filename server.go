@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -44,7 +45,11 @@ func main() {
 	e.DELETE("/tournaments/:id", removeTournament(db))
 	e.POST("/tournaments/:tournamentId/fixtures/:fixtureId/score", postScore(db))
 
-	e.Logger.Fatal(e.Start(":2019"))
+	address := ":8080"
+	if value, ok := os.LookupEnv("PORT"); ok {
+		address = ":" + value
+	}
+	e.Logger.Fatal(e.Start(address))
 }
 
 func index(db *sql.DB) echo.HandlerFunc {
