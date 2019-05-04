@@ -5,7 +5,15 @@ type teamPair struct {
 	Visitor team
 }
 
-func roundRobin(teams []team) []teamPair {
+func roundRobin(tournamentTeams []team) []teamPair {
+	teams := make([]team, len(tournamentTeams))
+	copy(teams, tournamentTeams[:len(tournamentTeams)])
+
+	var ghostTeam = team{}
+	if len(tournamentTeams)%2 == 1 {
+		teams = append(teams, ghostTeam)
+	}
+
 	n := len(teams)
 	numberOfRounds := n - 1
 	gamesPerRound := n / 2
@@ -27,7 +35,10 @@ func roundRobin(teams []team) []teamPair {
 			teamPair := teamPair{}
 			teamPair.Home = homeRibbon[gameCount-1]
 			teamPair.Visitor = awayRibbon[gameCount-1]
-			fixtures = append(fixtures, teamPair)
+
+			if teamPair.Home != ghostTeam && teamPair.Visitor != ghostTeam {
+				fixtures = append(fixtures, teamPair)
+			}
 		}
 		// rotate ribbons
 		homeToVisitor := homeRibbon[gamesPerRound-1]
