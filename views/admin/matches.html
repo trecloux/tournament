@@ -1,5 +1,7 @@
 {{define "content"}}
     <p class="text-center h1">Rencontres {{.tournament.Name}}</p>
+    {{range .pools}}
+    <p class="text-center h2">Poule {{.poolIndex}}</p>
     <table class="table table-striped">
       <thead class="thead-dark">
         <tr>
@@ -10,13 +12,13 @@
         </tr>
       </thead>
       <tbody>
-        {{range .fixtures}}
+        {{range .matches}}
         <tr>
           <th scope="row">{{.ScheduledAt.Format "15:04"}}</th>
           <td>{{.HomeTeamName}}</td>
           <td>{{.VisitorTeamName}}</td>
           <td>
-            <form method="POST" action="/tournaments/{{$.tournament.ID}}/fixtures/{{.ID}}/score">
+            <form method="POST" action="/tournaments/{{$.tournament.ID}}/matches/{{.ID}}/score">
               <input type="number" class="mb-2" maxlength="2" name="homeTeamGoals" value="{{if .HomeTeamGoals.Valid }}{{.HomeTeamGoals.Int64}}{{end}}">
               <input type="number" class="mb-2" maxlength="2" name="visitorTeamGoals" value="{{if .VisitorTeamGoals.Valid }}{{.VisitorTeamGoals.Int64}}{{end}}">
               <input type="submit" class="btn btn-primary" value="Valider">
@@ -26,4 +28,5 @@
         {{end}}
       </tbody>
     </table>
+  {{end}}
 {{end}}

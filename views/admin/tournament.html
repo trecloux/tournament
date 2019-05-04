@@ -1,0 +1,46 @@
+{{define "content"}}
+    <p class="text-center h1">Tournoi {{.tournament.Name}}</p>
+    
+    <p class="text-center h2">Équipes</p>
+    <form method="POST" action="/admin/tournaments/{{.tournament.ID}}/teams">
+      <table class="table table-striped">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col">Poule</th>
+            <th scope="col">Equipe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .teams}}
+          <tr>
+            <th scope="row">{{.PoolIndex}}</th>
+            <td><input type="text" required name="team_{{.ID}}" value="{{.Name}}"></td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      <input type="submit" class="btn btn-primary" value="Valider">
+    </form>
+
+    <p class="text-center h2">Matchs</p>
+    <table class="table table-striped">
+      <thead class="thead-dark">
+        <tr>
+            <th scope="col">Poule</th>
+            <th scope="col">Heure</th>
+            <th scope="col">Equipe</th>
+            <th scope="col">Equipe</th>
+          </tr>
+      </thead>
+      <tbody>
+        {{range .matches}}
+        <tr>
+          <th scope="row">{{.PoolIndex}}</th>
+          <th scope="row">{{.ScheduledAt.Format "15:04"}}</th>
+          <td>{{.HomeTeamName}}</td>
+          <td>{{.VisitorTeamName}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+{{end}}

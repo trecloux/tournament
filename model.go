@@ -8,14 +8,15 @@ import (
 type tournament struct {
 	ID              string
 	Name            string
-	pointsPerWin    float32
-	pointsPerDraw   float32
-	pointsPerDefeat float32
-	pointsPerGoal   float32
+	pointsPerWin    float64
+	pointsPerDraw   float64
+	pointsPerDefeat float64
+	pointsPerGoal   float64
 }
 
-type fixture struct {
+type match struct {
 	ID               int
+	PoolIndex        int
 	ScheduledAt      time.Time
 	HomeTeamName     string
 	HomeTeamID       int
@@ -25,18 +26,25 @@ type fixture struct {
 	VisitorTeamGoals sql.NullInt64
 }
 
+type pool struct {
+	TournamentID string
+	Index        int
+}
+
 type team struct {
-	ID   int
-	Name string
+	ID        int
+	Name      string
+	PoolIndex int
 }
 
 type teamRanking struct {
 	Name        string
+	Played      int
 	Wins        int
 	Draws       int
 	Defeats     int
 	Goals       int
 	GoalBalance int
-	Points      float32
+	Points      float64
 	Rank        int
 }

@@ -36,24 +36,32 @@ func migrateDB(db *sql.DB) {
 						points_per_win REAL NOT NULL,
 						points_per_draw REAL NOT NULL,
 						points_per_defeat REAL NOT NULL,
-						points_per_goal REAL NOT NULL
+						points_per_goal REAL NOT NULL						
+					);
+					
+					CREATE TABLE pool (
+						tournament_id TEXT NOT NULL REFERENCES tournament(id),
+						pool_index INTEGER NOT NULL,
+						PRIMARY KEY(tournament_id, pool_index)
 					);
 					
 					CREATE TABLE team (
 						id INTEGER PRIMARY KEY,
-						tournament_id TEXT NOT NULL REFERENCES tournament (id),
+						tournament_id TEXT NOT NULL REFERENCES tournament(id),
+						pool_index INTEGER NOT NULL REFERENCES pool(pool_index),
 						name TEXT NOT NULL
 					);
 					
-					CREATE TABLE fixture (
+					CREATE TABLE match (
 						id INTEGER PRIMARY KEY,
-						tournament_id TEXT NOT NULL,
+						tournament_id TEXT NOT NULL NOT NULL REFERENCES tournament(id),
+						pool_index INTEGER REFERENCES pool(pool_index),
 						scheduled_at INTEGER NOT NULL,
-						home_team_id INTEGER NOT NULL REFERENCES team (id),
-						visitor_team_id INTEGER NOT NULL REFERENCES team (id),
+						home_team_id INTEGER NOT NULL REFERENCES team(id),
+						visitor_team_id INTEGER NOT NULL REFERENCES team(id),
 						home_team_goals INTEGER,
 						visitor_team_goals INTEGER,
-						UNIQUE(tournament_id, home_team_id, visitor_team_id)						
+						UNIQUE(tournament_id, pool_index, home_team_id, visitor_team_id)						
 					);
 				`},
 			},
@@ -66,51 +74,64 @@ func migrateDB(db *sql.DB) {
 	fmt.Printf("Applied %d migrations!\n", n)
 }
 
-func selectFixtures(db *sql.DB, tournamentID string) []fixture {
+func selectTournamentMatches(db *sql.DB, tournamentID string) []match {
 	sql := `
-		SELECT fixture.id, fixture.scheduled_at, home_team.name, visitor_team.name, fixture.home_team_goals, fixture.visitor_team_goals
-		FROM fixture 
-		JOIN team home_team ON fixture.home_team_id = home_team.id
-		JOIN team visitor_team ON fixture.visitor_team_id = visitor_team.id
-		JOIN tournament ON fixture.tournament_id = tournament.id
-		WHERE fixture.tournament_id = $1	
+		SELECT match.id, match.pool_index, match.scheduled_at, home_team.name, visitor_team.name, match.home_team_goals, match.visitor_team_goals
+		FROM match 
+		JOIN team home_team ON match.home_team_id = home_team.id
+		JOIN team visitor_team ON match.visitor_team_id = visitor_team.id
+		WHERE match.tournament_id = $1
 		ORDER BY scheduled_at
 	`
-	rows, err := db.Query(sql, tournamentID)
+	return fetchMatches(db.Query(sql, tournamentID))
+}
+func selectTournamentPoolMatches(db *sql.DB, tournamentID string, poolIndex int) []match {
+	sql := `
+		SELECT match.id, match.pool_index, match.scheduled_at, home_team.name, visitor_team.name, match.home_team_goals, match.visitor_team_goals
+		FROM match 
+		JOIN team home_team ON match.home_team_id = home_team.id
+		JOIN team visitor_team ON match.visitor_team_id = visitor_team.id
+		WHERE match.tournament_id = $1 AND match.pool_index = $2
+		ORDER BY scheduled_at
+	`
+	return fetchMatches(db.Query(sql, tournamentID, poolIndex))
+}
+
+func fetchMatches(rows *sql.Rows, err error) []match {
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
-	slice := make([]fixture, 0)
+	slice := make([]match, 0)
 	for rows.Next() {
-		fixture := fixture{}
+		match := match{}
 		var scheduledAtStr string
-		err2 := rows.Scan(&fixture.ID, &scheduledAtStr, &fixture.HomeTeamName, &fixture.VisitorTeamName, &fixture.HomeTeamGoals, &fixture.VisitorTeamGoals)
+		err2 := rows.Scan(&match.ID, &match.PoolIndex, &scheduledAtStr, &match.HomeTeamName, &match.VisitorTeamName, &match.HomeTeamGoals, &match.VisitorTeamGoals)
 		if err2 != nil {
 			panic(err2)
 		}
-		fixture.ScheduledAt = parseTime(scheduledAtStr)
-		slice = append(slice, fixture)
+		match.ScheduledAt = parseTime(scheduledAtStr)
+		slice = append(slice, match)
 	}
 	return slice
 }
-
-func selectTournamentRanking(db *sql.DB, tournamentID string) []teamRanking {
+func selectTournamentPoolRanking(db *sql.DB, tournamentID string, poolIndex int) []teamRanking {
 	sql := `
 		WITH finished_games AS (
 			SELECT *
-			FROM fixture 
-			WHERE tournament_id =$1 AND home_team_goals IS NOT NULL AND visitor_team_goals IS NOT NULL
-		), team_fixtures AS (
+			FROM match 
+			WHERE tournament_id =$1
+			  AND pool_index=$2
+			  AND home_team_goals IS NOT NULL 
+			  AND visitor_team_goals IS NOT NULL
+		), team_matches AS (
 			SELECT team.id AS id, team.name AS name, home_team_goals AS team_goals, visitor_team_goals AS opponent_goals
 			FROM team 
 			JOIN finished_games ON finished_games.home_team_id = team.id 
-			WHERE team.tournament_id =$1
 			UNION
 			SELECT team.id AS id, team.name AS name, visitor_team_goals AS team_goals, home_team_goals AS opponent_goals
 			FROM team 
 			JOIN finished_games ON finished_games.visitor_team_id = team.id 
-			WHERE team.tournament_id =$1
 		), team_result AS (
 			SELECT 
 				id,
@@ -128,9 +149,9 @@ func selectTournamentRanking(db *sql.DB, tournamentID string) []teamRanking {
 				END AS defeat,
 				team_goals,
 				opponent_goals
-			FROM team_fixtures
+			FROM team_matches
 		), team_summary AS (
-			SELECT team_result.id, SUM(win) AS win_count, SUM(draw) AS draw_count , SUM(defeat) AS defeat_count, SUM(team_goals) AS goals, (SUM(team_goals) - SUM(opponent_goals)) AS goal_balance,
+			SELECT team_result.id, COUNT(*) AS played, SUM(win) AS win_count, SUM(draw) AS draw_count , SUM(defeat) AS defeat_count, SUM(team_goals) AS goals, (SUM(team_goals) - SUM(opponent_goals)) AS goal_balance,
 				(SUM(win)*points_per_win)
 				+
 				(SUM(draw)*points_per_draw)
@@ -145,6 +166,7 @@ func selectTournamentRanking(db *sql.DB, tournamentID string) []teamRanking {
 		)
 		SELECT 
 			name, 
+			COALESCE(played, 0),
 			COALESCE(win_count, 0),
 			COALESCE(draw_count, 0),
 			COALESCE(defeat_count, 0),
@@ -154,9 +176,10 @@ func selectTournamentRanking(db *sql.DB, tournamentID string) []teamRanking {
 			RANK () OVER ( ORDER BY points DESC, goal_balance DESC, name ) rank
 		FROM team 
 		LEFT JOIN team_summary ON team.id = team_summary.id
+		WHERE team.tournament_id = $1 AND team.pool_index = $2
 		ORDER BY rank	
 	`
-	rows, err := db.Query(sql, tournamentID)
+	rows, err := db.Query(sql, tournamentID, poolIndex)
 	if err != nil {
 		panic(err)
 	}
@@ -164,7 +187,7 @@ func selectTournamentRanking(db *sql.DB, tournamentID string) []teamRanking {
 	slice := make([]teamRanking, 0)
 	for rows.Next() {
 		row := teamRanking{}
-		err2 := rows.Scan(&row.Name, &row.Wins, &row.Draws, &row.Defeats, &row.Goals, &row.GoalBalance, &row.Points, &row.Rank)
+		err2 := rows.Scan(&row.Name, &row.Played, &row.Wins, &row.Draws, &row.Defeats, &row.Goals, &row.GoalBalance, &row.Points, &row.Rank)
 		if err2 != nil {
 			panic(err2)
 		}
@@ -187,16 +210,51 @@ func selectTournament(db *sql.DB, tournamentID string) tournament {
 	}
 	return tournament
 }
-
 func selectTournamentTeams(db *sql.DB, tournamentID string) []team {
 	sql := `
-		SELECT team.id, team.name
+		SELECT team.id, team.name, team.pool_index
 		FROM team 
 		JOIN tournament ON tournament.id = team.tournament_id
 		WHERE tournament.id = $1
-		ORDER BY team.id	
+		ORDER BY team.pool_index, team.id	
+	`
+	return fetchTeams(db.Query(sql, tournamentID))
+}
+func selectTournamentPools(db *sql.DB, tournamentID string) []pool {
+	sql := `
+		SELECT tournament_id, pool_index
+		FROM pool
+		WHERE tournament_id = $1
+		ORDER BY pool_index
 	`
 	rows, err := db.Query(sql, tournamentID)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	slice := make([]pool, 0)
+	for rows.Next() {
+		row := pool{}
+		err2 := rows.Scan(&row.TournamentID, &row.Index)
+		if err2 != nil {
+			panic(err2)
+		}
+		slice = append(slice, row)
+	}
+	return slice
+}
+func selectTournamentPoolTeams(db *sql.DB, tournamentID string, poolIndex int) []team {
+	sql := `
+		SELECT team.id, team.name, team.pool_index
+		FROM team 
+		JOIN tournament ON tournament.id = team.tournament_id
+		WHERE tournament.id = $1 AND team.pool_index = $2
+		ORDER BY team.pool_index, team.id	
+	`
+	return fetchTeams(db.Query(sql, tournamentID, poolIndex))
+}
+
+func fetchTeams(rows *sql.Rows, err error) []team {
 	if err != nil {
 		panic(err)
 	}
@@ -204,13 +262,14 @@ func selectTournamentTeams(db *sql.DB, tournamentID string) []team {
 	slice := make([]team, 0)
 	for rows.Next() {
 		row := team{}
-		err2 := rows.Scan(&row.ID, &row.Name)
+		err2 := rows.Scan(&row.ID, &row.Name, &row.PoolIndex)
 		if err2 != nil {
 			panic(err2)
 		}
 		slice = append(slice, row)
 	}
 	return slice
+
 }
 
 func selectTournaments(db *sql.DB) []tournament {
@@ -246,37 +305,64 @@ func insertTournament(db *sql.DB, t tournament) {
 		panic(err)
 	}
 }
-func insertTeams(db *sql.DB, tournamentID string, teams []team) {
+func insertPool(db *sql.DB, p pool) {
 	sql := `
-		INSERT INTO team(tournament_id, name)
+		INSERT INTO pool(tournament_id, pool_index)
 		VALUES ($1, $2)
 	`
+	_, err := db.Exec(sql, p.TournamentID, p.Index)
+	if err != nil {
+		panic(err)
+	}
+}
+func insertTeams(db *sql.DB, tournamentID string, teams []team) {
+	sql := `
+		INSERT INTO team(tournament_id, name, pool_index)
+		VALUES ($1, $2, $3)
+	`
 	for _, team := range teams {
-		_, err := db.Exec(sql, tournamentID, team.Name)
+		_, err := db.Exec(sql, tournamentID, team.Name, team.PoolIndex)
 		if err != nil {
 			panic(err)
 		}
 	}
 }
-func insertFixtures(db *sql.DB, tournamentID string, fixtures []fixture) {
+func updateTeamNames(db *sql.DB, teams []team) {
 	sql := `
-		INSERT INTO fixture(tournament_id, scheduled_at, home_team_id, visitor_team_id)
-		VALUES ($1, $2, $3, $4)
+		UPDATE team SET name = $1
+		WHERE id = $2
 	`
-	for _, fixture := range fixtures {
-		_, err := db.Exec(sql, tournamentID, fixture.ScheduledAt.Format(timeFormat), fixture.HomeTeamID, fixture.VisitorTeamID)
+	for _, team := range teams {
+		_, err := db.Exec(sql, team.Name, team.ID)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+func insertMatches(db *sql.DB, tournamentID string, matchs []match) {
+	sql := `
+		INSERT INTO match(tournament_id, pool_index, scheduled_at, home_team_id, visitor_team_id)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+	for _, match := range matchs {
+		_, err := db.Exec(sql, tournamentID, match.PoolIndex, match.ScheduledAt.Format(timeFormat), match.HomeTeamID, match.VisitorTeamID)
 		if err != nil {
 			panic(err)
 		}
 	}
 }
 func deleteTournament(db *sql.DB, tournamentID string) {
-	sql := "DELETE FROM fixture WHERE tournament_id = $1"
+	sql := "DELETE FROM match WHERE tournament_id = $1"
 	_, err := db.Exec(sql, tournamentID)
 	if err != nil {
 		panic(err)
 	}
 	sql = "DELETE FROM team WHERE tournament_id = $1"
+	_, err = db.Exec(sql, tournamentID)
+	if err != nil {
+		panic(err)
+	}
+	sql = "DELETE FROM pool WHERE tournament_id = $1"
 	_, err = db.Exec(sql, tournamentID)
 	if err != nil {
 		panic(err)
@@ -288,9 +374,9 @@ func deleteTournament(db *sql.DB, tournamentID string) {
 	}
 }
 
-func saveFixtureScore(db *sql.DB, fixtureID int, homeTeamGoals int, visitorTeamGoals int) {
-	sql := "UPDATE fixture SET home_team_goals=$1, visitor_team_goals=$2 WHERE id = $3"
-	_, err := db.Exec(sql, homeTeamGoals, visitorTeamGoals, fixtureID)
+func saveMatchScore(db *sql.DB, matchID int, homeTeamGoals int, visitorTeamGoals int) {
+	sql := "UPDATE match SET home_team_goals=$1, visitor_team_goals=$2 WHERE id = $3"
+	_, err := db.Exec(sql, homeTeamGoals, visitorTeamGoals, matchID)
 	if err != nil {
 		panic(err)
 	}

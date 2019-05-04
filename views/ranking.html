@@ -1,12 +1,15 @@
 {{define "content"}}
     <p class="text-center h1">Classement {{.tournament.Name}}</p>
+    {{range .pools}}
+    <p class="text-center h2">Poule {{.poolIndex}}</p>
     <table class="table table-striped">
       <thead class="thead-dark">
         <tr>
           <th scope="col">#</th>
           <th scope="col">Equipe</th>
+          <th scope="col">Joués</th>
           <th scope="col">Victoires</th>
-          <th scope="col">Nul</th>
+          <th scope="col">Nuls</th>
           <th scope="col">Défaites</th>
           <th scope="col">Buts</th>
           <th scope="col">Diff</th>
@@ -18,6 +21,7 @@
         <tr>
           <td>{{.Rank}}</td>
           <td>{{.Name}}</td>
+          <td>{{.Played}}</td>
           <td>{{.Wins}}</td>
           <td>{{.Draws}}</td>
           <td>{{.Defeats}}</td>
@@ -28,4 +32,5 @@
         {{end}}
       </tbody>
     </table>
+    {{end}}
 {{end}}

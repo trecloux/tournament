@@ -1,27 +1,30 @@
 {{define "content"}}
     <p class="text-center h1">Rencontres {{.tournament.Name}}</p>
+    {{range .pools}}
+    <p class="text-center h2">Poule {{.poolIndex}}</p>
     <table class="table table-striped">
       <thead class="thead-dark">
         <tr>
           <th scope="col">Heure</th>
           <th scope="col">Equipe</th>
-          <th scope="col">Equipe</th>
           <th scope="col">Score</th>
+          <th scope="col">Equipe</th>
         </tr>
       </thead>
       <tbody>
-        {{range .fixtures}}
+        {{range .matches}}
         <tr>
           <th scope="row">{{.ScheduledAt.Format "15:04"}}</th>
           <td>{{.HomeTeamName}}</td>
-          <td>{{.VisitorTeamName}}</td>
           {{if .HomeTeamGoals.Valid }}
           <td>{{.HomeTeamGoals.Int64}} - {{.VisitorTeamGoals.Int64}}</td>
           {{else}}
           <td>&nbsp;</td>
           {{end}}
+          <td>{{.VisitorTeamName}}</td>
         </tr>
         {{end}}
       </tbody>
     </table>
+    {{end}}
 {{end}}
