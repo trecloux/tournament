@@ -6,11 +6,12 @@ type teamPair struct {
 }
 
 func roundRobin(tournamentTeams []team) []teamPair {
-	teams := make([]team, len(tournamentTeams))
-	copy(teams, tournamentTeams[:len(tournamentTeams)])
+	nbTeams := len(tournamentTeams)
+	teams := make([]team, nbTeams)
+	copy(teams, tournamentTeams[:])
 
 	var ghostTeam = team{}
-	if len(tournamentTeams)%2 == 1 {
+	if nbTeams%2 == 1 {
 		teams = append(teams, ghostTeam)
 	}
 
@@ -25,7 +26,7 @@ func roundRobin(tournamentTeams []team) []teamPair {
 	awayRibbon = reverseTeams(awayRibbon)
 	fixed := teams[0]
 
-	fixtures := make([]teamPair, 0)
+	matches := make([]teamPair, 0)
 	roundCount := 0
 	for roundCount < numberOfRounds {
 		roundCount++
@@ -37,7 +38,7 @@ func roundRobin(tournamentTeams []team) []teamPair {
 			teamPair.Visitor = awayRibbon[gameCount-1]
 
 			if teamPair.Home != ghostTeam && teamPair.Visitor != ghostTeam {
-				fixtures = append(fixtures, teamPair)
+				matches = append(matches, teamPair)
 			}
 		}
 		// rotate ribbons
@@ -46,7 +47,29 @@ func roundRobin(tournamentTeams []team) []teamPair {
 		homeRibbon = append([]team{fixed}, append([]team{awayToHome}, homeRibbon[1:gamesPerRound-1]...)...)
 		awayRibbon = append(awayRibbon[1:], homeToVisitor)
 	}
-	return fixtures
+	if nbTeams <= 4 {
+		return matches
+	}
+	orderedMatches := make([]teamPair, 0)
+	for i := 0; i < len(matches); i++ {
+		current := matches[i]
+		if i > 0 && i < len(matches)-1 {
+			previous := matches[i-1]
+			next := matches[i+1]
+			if previous.Home.ID == current.Home.ID || previous.Home.ID == current.Visitor.ID || previous.Visitor.ID == current.Home.ID || previous.Visitor.ID == current.Visitor.ID {
+				orderedMatches = append(orderedMatches, next)
+				orderedMatches = append(orderedMatches, current)
+				i++
+			} else {
+				orderedMatches = append(orderedMatches, current)
+			}
+
+		} else {
+			orderedMatches = append(orderedMatches, current)
+		}
+
+	}
+	return orderedMatches
 }
 
 func reverseTeams(input []team) []team {

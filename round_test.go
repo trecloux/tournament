@@ -39,10 +39,10 @@ func TestComputeRoundRobinEvenNumberOfTeams(t *testing.T) {
 	expectPair(t, pairs, 3, 2, 3)
 	expectPair(t, pairs, 4, 1, 4)
 	expectPair(t, pairs, 5, 5, 3)
-	expectPair(t, pairs, 6, 1, 3)
-	expectPair(t, pairs, 7, 4, 2)
-	expectPair(t, pairs, 8, 1, 2)
-	expectPair(t, pairs, 9, 4, 5)
+	expectPair(t, pairs, 6, 4, 2)
+	expectPair(t, pairs, 7, 1, 3)
+	expectPair(t, pairs, 8, 4, 5)
+	expectPair(t, pairs, 9, 1, 2)
 
 }
 
