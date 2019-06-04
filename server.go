@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/foolin/goview/supports/echoview"
 	"github.com/foolin/goview/supports/gorice"
+	"github.com/thoas/go-funk"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -44,12 +44,13 @@ func main() {
 	e.GET("/admin", admin(db))
 	e.GET("/admin/tournaments/:id", adminTournament(db))
 	e.POST("/admin/tournaments/:id/teams", postTeamNames(db))
-	e.GET("/admin/tournaments/:id/matches", adminMatches(db))
-	e.GET("/tournaments/:id/matches", getMatches(db))
+	e.GET("/admin/tournaments/:id/matchs", adminMatches(db))
+	e.GET("/tournaments/:id/matchs", getMatches(db))
 	e.GET("/tournaments/:id/ranking", getRanking(db))
 	e.POST("/tournaments", createTournament(db))
 	e.DELETE("/tournaments/:id", removeTournament(db))
-	e.POST("/tournaments/:tournamentId/matches/:matchId/score", postScore(db))
+	e.POST("/tournaments/:tournamentId/pools/:poolIndex/matchs/:matchId/score", postPoolMatchScore(db))
+	e.POST("/tournaments/:tournamentId/ranking-matchs/:key/score", postRankingMatchScore(db))
 
 	address := ":8080"
 	if value, ok := os.LookupEnv("PORT"); ok {
@@ -75,11 +76,11 @@ func adminTournament(db *sql.DB) echo.HandlerFunc {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
 		teams := selectTournamentTeams(db, tournamentID)
-		matches := selectTournamentMatches(db, tournamentID)
+		matchs := selectAllTournamentPoolMatchs(db, tournamentID)
 		return c.Render(
 			http.StatusOK,
 			"admin/tournament",
-			echo.Map{"title": "Scores", "tournament": tournament, "teams": teams, "matches": matches},
+			echo.Map{"title": "Scores", "tournament": tournament, "teams": teams, "matchs": matchs},
 		)
 	}
 }
@@ -87,26 +88,80 @@ func adminMatches(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
-		pools := poolsAndMatches(db, tournamentID)
-		return c.Render(http.StatusOK, "admin/matches", echo.Map{"title": "Scores", "tournament": tournament, "pools": pools})
+		pools := poolsMatchs(db, tournamentID)
+		rankingMatchs := tournamentRankingMatchs(db, tournamentID)
+		return c.Render(http.StatusOK, "admin/matchs", echo.Map{
+			"title":         "Scores",
+			"tournament":    tournament,
+			"pools":         pools,
+			"rankingMatchs": rankingMatchs,
+		})
 	}
 }
 func getMatches(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
-		pools := poolsAndMatches(db, tournamentID)
-		return c.Render(http.StatusOK, "matches", echo.Map{"title": "Rencontres", "tournament": tournament, "pools": pools})
+		pools := poolsMatchs(db, tournamentID)
+		rankingMatchs := tournamentRankingMatchs(db, tournamentID)
+		return c.Render(http.StatusOK, "matchs", echo.Map{
+			"title":         "Rencontres",
+			"tournament":    tournament,
+			"pools":         pools,
+			"rankingMatchs": rankingMatchs,
+		})
 	}
 }
-
-func poolsAndMatches(db *sql.DB, tournamentID string) []echo.Map {
+func tournamentRankingMatchs(db *sql.DB, tournamentID string) []rankingMatch {
+	matchs := selectTournamentRankingMatchs(db, tournamentID)
 	pools := selectTournamentPools(db, tournamentID)
-	poolViews := make([]echo.Map, 0)
+	matchs = funk.Map(matchs, func(match rankingMatch) rankingMatch {
+		if !match.HomeTeamName.Valid {
+			match.HomeTeamName = rankingMatchTeamName(pools, match.HomeTeamPoolIndex, match.HomeTeamPoolRank, match.HomeTeamSourceRankingMatch, match.HomeTeamSourceRankingMatchWinner)
+		}
+		if !match.VisitorTeamName.Valid {
+			match.VisitorTeamName = rankingMatchTeamName(pools, match.VisitorTeamPoolIndex, match.VisitorTeamPoolRank, match.VisitorTeamSourceRankingMatch, match.VisitorTeamSourceRankingMatchWinner)
+		}
+		fmt.Printf("Match            : %s\n", match.Key)
+		fmt.Printf("Home    team name: %s\n", match.HomeTeamName.String)
+		fmt.Printf("Visitor team name: %s\n", match.VisitorTeamName.String)
+		return match
+	}).([]rankingMatch)
+	return matchs
+}
+func rankingMatchTeamName(pools []pool, poolIndex sql.NullInt64, poolRank sql.NullInt64, rankingMatchKey sql.NullString, rankingMatchWinner sql.NullBool) sql.NullString {
+	var name string
+	if poolIndex.Valid {
+
+		pool := funk.Find(pools, func(p pool) bool {
+			return p.Index == int(poolIndex.Int64)
+		}).(pool)
+		var prefix string
+		if poolRank.Int64 == 1 {
+			prefix = "1er"
+		} else {
+			prefix = fmt.Sprintf("%deme", poolRank.Int64)
+		}
+		name = fmt.Sprintf("%s poule %s", prefix, pool.Name)
+	} else {
+		var prefix string
+		if rankingMatchWinner.Bool {
+			prefix = "Gagnant"
+		} else {
+			prefix = "Perdant"
+		}
+		name = fmt.Sprintf("%s match %s", prefix, rankingMatchKey.String)
+	}
+	return sql.NullString{String: name, Valid: true}
+}
+func poolsMatchs(db *sql.DB, tournamentID string) []poolViewModel {
+	pools := selectTournamentPools(db, tournamentID)
+	poolViews := make([]poolViewModel, 0)
 	for _, pool := range pools {
-		poolViews = append(poolViews, echo.Map{
-			"poolIndex": pool.Index,
-			"matches":   selectTournamentPoolMatches(db, tournamentID, pool.Index),
+		poolViews = append(poolViews, poolViewModel{
+			PoolIndex: pool.Index,
+			PoolName:  pool.Name,
+			Matchs:    selectTournamentPoolMatchs(db, tournamentID, pool.Index),
 		})
 	}
 	return poolViews
@@ -115,16 +170,26 @@ func getRanking(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
-		pools := selectTournamentPools(db, tournamentID)
-		rankingViews := make([]echo.Map, 0)
-		for _, pool := range pools {
-			rankingViews = append(rankingViews, echo.Map{
-				"poolIndex": pool.Index,
-				"ranking":   selectTournamentPoolRanking(db, tournamentID, pool.Index),
-			})
-		}
-		return c.Render(http.StatusOK, "ranking", echo.Map{"title": "Classements", "tournament": tournament, "pools": rankingViews})
+		finalRanking := selectTournamentFinalRanking(db, tournamentID)
+		return c.Render(http.StatusOK, "ranking", echo.Map{
+			"title":        "Classements",
+			"tournament":   tournament,
+			"pools":        poolsRankings(db, tournamentID),
+			"finalRanking": finalRanking,
+		})
 	}
+}
+func poolsRankings(db *sql.DB, tournamentID string) []rankingViewModel {
+	pools := selectTournamentPools(db, tournamentID)
+	rankingViews := make([]rankingViewModel, 0)
+	for _, pool := range pools {
+		rankingViews = append(rankingViews, rankingViewModel{
+			PoolIndex:    pool.Index,
+			PoolName:     pool.Name,
+			TeamRankings: selectTournamentPoolRanking(db, tournamentID, pool.Index),
+		})
+	}
+	return rankingViews
 }
 func removeTournament(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -184,20 +249,20 @@ func createTournament(db *sql.DB) echo.HandlerFunc {
 			insertTeams(db, tournamentID, poolTeams)
 			poolTeams = selectTournamentPoolTeams(db, tournamentID, poolIndex)
 			pairs := roundRobin(poolTeams)
-			matches := make([]match, 0)
+			matchs := make([]poolMatch, 0)
 			matchTime := startTime
 			for _, pair := range pairs {
-				match := match{
+				match := poolMatch{
 					PoolIndex:     poolIndex,
 					ScheduledAt:   matchTime,
 					HomeTeamID:    pair.Home.ID,
 					VisitorTeamID: pair.Visitor.ID,
 				}
-				matches = append(matches, match)
+				matchs = append(matchs, match)
 				matchTime = matchTime.Add(gameDuration)
 				matchTime = matchTime.Add(betweenGamesDuration)
 			}
-			insertMatches(db, tournamentID, matches)
+			insertMatchs(db, tournamentID, matchs)
 		}
 		return c.Redirect(http.StatusSeeOther, "/admin/tournaments/"+tournamentID)
 	}
@@ -216,15 +281,42 @@ func postTeamNames(db *sql.DB) echo.HandlerFunc {
 	}
 
 }
-func postScore(db *sql.DB) echo.HandlerFunc {
+func postPoolMatchScore(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("tournamentId")
-		log.Println(tournamentID)
 		matchID, _ := strconv.Atoi(c.Param("matchId"))
-		log.Println(matchID)
+		poolIndex, _ := strconv.Atoi(c.Param("poolIndex"))
 		homeTeamGoals, _ := strconv.Atoi(c.FormValue("homeTeamGoals"))
 		visitorTeamGoals, _ := strconv.Atoi(c.FormValue("visitorTeamGoals"))
-		saveMatchScore(db, matchID, homeTeamGoals, visitorTeamGoals)
-		return c.Redirect(http.StatusSeeOther, "/admin/tournaments/"+tournamentID+"/matches")
+		savePoolMatchScore(db, matchID, homeTeamGoals, visitorTeamGoals)
+		matchsToBePlayed := countPoolMatchsToBePlayed(db, tournamentID, poolIndex)
+		if matchsToBePlayed == 0 {
+			teamRanking := selectTournamentPoolRanking(db, tournamentID, poolIndex)
+			for _, teamRank := range teamRanking {
+				updateRankingMatchFromPoolRank(db, tournamentID, poolIndex, teamRank.Rank, teamRank.ID)
+			}
+		}
+		return c.Redirect(http.StatusSeeOther, "/admin/tournaments/"+tournamentID+"/matchs")
+	}
+}
+func postRankingMatchScore(db *sql.DB) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		tournamentID := c.Param("tournamentId")
+		key := c.Param("key")
+		homeTeamGoals, _ := strconv.Atoi(c.FormValue("homeTeamGoals"))
+		visitorTeamGoals, _ := strconv.Atoi(c.FormValue("visitorTeamGoals"))
+		saveRankingMatchScore(db, tournamentID, key, homeTeamGoals, visitorTeamGoals)
+		homeTeamID, visitorTeamID := selectRankingMatchTeamIDs(db, tournamentID, key)
+		var winnerTeamID int
+		var looserTeamID int
+		if homeTeamGoals > visitorTeamGoals {
+			winnerTeamID = homeTeamID
+			looserTeamID = visitorTeamID
+		} else {
+			winnerTeamID = visitorTeamID
+			looserTeamID = homeTeamID
+		}
+		updateRankingMatchFromSourceRankingMatch(db, tournamentID, key, winnerTeamID, looserTeamID)
+		return c.Redirect(http.StatusSeeOther, "/admin/tournaments/"+tournamentID+"/matchs")
 	}
 }

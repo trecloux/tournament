@@ -14,7 +14,7 @@ type tournament struct {
 	pointsPerGoal   float64
 }
 
-type match struct {
+type poolMatch struct {
 	ID               int
 	PoolIndex        int
 	ScheduledAt      time.Time
@@ -24,11 +24,43 @@ type match struct {
 	VisitorTeamID    int
 	HomeTeamGoals    sql.NullInt64
 	VisitorTeamGoals sql.NullInt64
+	PitchName        string
+}
+
+type rankingMatch struct {
+	Key                                 string
+	ScheduledAt                         time.Time
+	HomeTeamPoolIndex                   sql.NullInt64
+	HomeTeamPoolRank                    sql.NullInt64
+	HomeTeamSourceRankingMatch          sql.NullString
+	HomeTeamSourceRankingMatchWinner    sql.NullBool
+	HomeTeamName                        sql.NullString
+	HomeTeamGoals                       sql.NullInt64
+	VisitorTeamPoolIndex                sql.NullInt64
+	VisitorTeamPoolRank                 sql.NullInt64
+	VisitorTeamSourceRankingMatch       sql.NullString
+	VisitorTeamSourceRankingMatchWinner sql.NullBool
+	VisitorTeamName                     sql.NullString
+	VisitorTeamGoals                    sql.NullInt64
+	PitchName                           string
 }
 
 type pool struct {
 	TournamentID string
 	Index        int
+	Name         string
+}
+
+type poolViewModel struct {
+	PoolIndex int
+	PoolName  string
+	Matchs    []poolMatch
+}
+
+type rankingViewModel struct {
+	PoolIndex    int
+	PoolName     string
+	TeamRankings []teamRanking
 }
 
 type team struct {
@@ -38,6 +70,7 @@ type team struct {
 }
 
 type teamRanking struct {
+	ID          int
 	Name        string
 	Played      int
 	Wins        int
@@ -47,4 +80,9 @@ type teamRanking struct {
 	GoalBalance int
 	Points      float64
 	Rank        int
+}
+
+type tournamentFinalRanking struct {
+	Rank     int
+	TeamName sql.NullString
 }

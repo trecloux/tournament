@@ -1,7 +1,7 @@
 {{define "content"}}
     <p class="text-center h1">Classement {{.tournament.Name}}</p>
     {{range .pools}}
-    <p class="text-center h2">Poule {{.poolIndex}}</p>
+    <p class="text-center h2">Poule {{.PoolName}}</p>
     <table class="table table-striped">
       <thead class="thead-dark">
         <tr>
@@ -17,7 +17,7 @@
         </tr>
       </thead>
       <tbody>
-        {{range .ranking}}
+        {{range .TeamRankings}}
         <tr>
           <td>{{.Rank}}</td>
           <td>{{.Name}}</td>
@@ -33,4 +33,21 @@
       </tbody>
     </table>
     {{end}}
+    <p class="text-center h2">Classement final</p>
+    <table class="table table-striped">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Equipe</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .finalRanking}}
+        <tr>
+          <td>{{.Rank}}</td>
+          <td>{{if .TeamName.Valid }}{{.TeamName.String}}{{ end }}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
 {{end}}
