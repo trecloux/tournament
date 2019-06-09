@@ -106,7 +106,7 @@ func migrateDB(db *sql.DB) {
 	fmt.Printf("Applied %d migrations!\n", n)
 }
 
-func selectAllTournamentPoolMatchs(db *sql.DB, tournamentID string) []poolMatch {
+func selectAllTournamentPoolMatches(db *sql.DB, tournamentID string) []poolMatch {
 	sql := `
 		SELECT match.id, match.pool_index, match.scheduled_at, home_team.name, visitor_team.name, match.home_team_goals, match.visitor_team_goals, pitch.name AS pitch_name
 		FROM pool_match match 
@@ -116,10 +116,10 @@ func selectAllTournamentPoolMatchs(db *sql.DB, tournamentID string) []poolMatch 
 		WHERE match.tournament_id = $1
 		ORDER BY scheduled_at
 	`
-	return fetchPoolMatchs(db.Query(sql, tournamentID))
+	return fetchPoolMatches(db.Query(sql, tournamentID))
 }
 
-func selectTournamentPoolMatchs(db *sql.DB, tournamentID string, poolIndex int) []poolMatch {
+func selectTournamentPoolMatches(db *sql.DB, tournamentID string, poolIndex int) []poolMatch {
 	sql := `
 		SELECT match.id, match.pool_index, match.scheduled_at, home_team.name, visitor_team.name, match.home_team_goals, match.visitor_team_goals, pitch.name AS pitch_name
 		FROM pool_match match 
@@ -129,10 +129,10 @@ func selectTournamentPoolMatchs(db *sql.DB, tournamentID string, poolIndex int) 
 		WHERE match.tournament_id = $1 AND match.pool_index = $2
 		ORDER BY scheduled_at
 	`
-	return fetchPoolMatchs(db.Query(sql, tournamentID, poolIndex))
+	return fetchPoolMatches(db.Query(sql, tournamentID, poolIndex))
 }
 
-func fetchPoolMatchs(rows *sql.Rows, err error) []poolMatch {
+func fetchPoolMatches(rows *sql.Rows, err error) []poolMatch {
 	if err != nil {
 		panic(err)
 	}
@@ -151,7 +151,7 @@ func fetchPoolMatchs(rows *sql.Rows, err error) []poolMatch {
 	return slice
 }
 
-func selectTournamentRankingMatchs(db *sql.DB, tournamentID string) []rankingMatch {
+func selectTournamentRankingMatches(db *sql.DB, tournamentID string) []rankingMatch {
 	sql := `
 		SELECT match.key, scheduled_at,
 			home_team.name,    home_team_pool_index,    home_team_pool_rank,    home_team_source_ranking_match,    home_team_source_ranking_match_winner,    home_team_goals,
@@ -319,6 +319,24 @@ func selectTournamentPools(db *sql.DB, tournamentID string) []pool {
 	}
 	return slice
 }
+func selectTournamentPool(db *sql.DB, tournamentID string, poolIndex int) pool {
+	sql := `
+		SELECT tournament_id, pool_index, name
+		FROM pool
+		WHERE tournament_id = $1 AND pool_index=$2
+	`
+	rows, err := db.Query(sql, tournamentID, poolIndex)
+	if err != nil {
+		panic(err)
+	}
+	rows.Next()
+	row := pool{}
+	err2 := rows.Scan(&row.TournamentID, &row.Index, &row.Name)
+	if err2 != nil {
+		panic(err2)
+	}
+	return row
+}
 func selectTournamentPoolTeams(db *sql.DB, tournamentID string, poolIndex int) []team {
 	sql := `
 		SELECT team.id, team.name, team.pool_index
@@ -415,12 +433,12 @@ func updateTeamNames(db *sql.DB, teams []team) {
 		}
 	}
 }
-func insertMatchs(db *sql.DB, tournamentID string, matchs []poolMatch) {
+func insertPoolMatches(db *sql.DB, tournamentID string, matches []poolMatch) {
 	sql := `
 		INSERT INTO match(tournament_id, pool_index, scheduled_at, home_team_id, visitor_team_id)
 		VALUES ($1, $2, $3, $4, $5)
 	`
-	for _, match := range matchs {
+	for _, match := range matches {
 		_, err := db.Exec(sql, tournamentID, match.PoolIndex, match.ScheduledAt.Format(timeFormat), match.HomeTeamID, match.VisitorTeamID)
 		if err != nil {
 			panic(err)
@@ -450,9 +468,9 @@ func deleteTournament(db *sql.DB, tournamentID string) {
 	}
 }
 
-func savePoolMatchScore(db *sql.DB, matchID int, homeTeamGoals int, visitorTeamGoals int) {
-	sql := "UPDATE pool_match SET home_team_goals=$1, visitor_team_goals=$2 WHERE id = $3"
-	_, err := db.Exec(sql, homeTeamGoals, visitorTeamGoals, matchID)
+func savePoolMatchScore(db *sql.DB, tournamentID string,  matchID int, homeTeamGoals int, visitorTeamGoals int) {
+	sql := "UPDATE pool_match SET home_team_goals=$1, visitor_team_goals=$2 WHERE tournament_id = $3 AND id = $4"
+	_, err := db.Exec(sql, homeTeamGoals, visitorTeamGoals, tournamentID,  matchID)
 	if err != nil {
 		panic(err)
 	}
@@ -466,7 +484,7 @@ func saveRankingMatchScore(db *sql.DB, tournamentID string, key string, homeTeam
 	}
 }
 
-func countPoolMatchsToBePlayed(db *sql.DB, tournamentID string, poolIndex int) int {
+func countPoolMatchesToBePlayed(db *sql.DB, tournamentID string, poolIndex int) int {
 	sql := `
 	SELECT COUNT(*)
 	FROM pool_match

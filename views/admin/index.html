@@ -8,93 +8,106 @@
             <th scope="col">Nom</th>
             <th scope="col">Affichage</th>
             <th scope="col">Saisie</th>
-            <th scope="col">Supprimer</th>
+{{/*            <th scope="col">Supprimer</th>*/}}
           </tr>
         </thead>
         <tbody>
-            {{range .tournaments}}
+            {{range $tournament := .tournaments}}
             <tr>
               <th scope="row">{{.ID}}</th>
               <td>{{.Name}}</td>
               <td>
                 <ul>
-                  <li><a href="/tournaments/{{.ID}}/matchs">Rencontres</a></li>
-                  <li><a href="/tournaments/{{.ID}}/ranking">Classement</a></li>
+                  <li><a href="/tournaments/{{$tournament.ID}}/pools/matches">Rencontres toutes poules</a></li>
+                  {{range .Pools}}
+                  <li><a href="/tournaments/{{$tournament.ID}}/pools/{{.Index}}/matches">Rencontres poule {{.Name}}</a></li>
+                  {{end}}
+                  <li><a href="/tournaments/{{$tournament.ID}}/pools/ranking">Classement toutes poules</a></li>
+                  {{range .Pools}}
+                  <li><a href="/tournaments/{{$tournament.ID}}/pools/{{.Index}}/ranking">Classement poule {{.Name}}</a></li>
+                  {{end}}
+                  <li><a href="/tournaments/{{$tournament.ID}}/ranking-matches">Matchs de classement</a></li>
+                  <li><a href="/tournaments/{{$tournament.ID}}/final-ranking">Classement final</a></li>
                 </ul>
               </td>
-              <td><a href="/admin/tournaments/{{.ID}}/matchs">Scores</a></td>
               <td>
-                <form method="POST" action="/tournaments/{{.ID}}">
-                  <input type="hidden" name="_method" value="DELETE">
-                  <input class="btn btn-danger" type="submit" value="Supprimer">
-                </form>
+                <ul>
+                  <li><a href="/admin/tournaments/{{.ID}}/pools-matches">Scores matchs de poules</a></li>
+                  <li><a href="/admin/tournaments/{{.ID}}/ranking-matches">Scores matchs de classement</a></li>
+                </ul>
               </td>
+{{/*              <td>*/}}
+{{/*                <form method="POST" action="/tournaments/{{.ID}}">*/}}
+{{/*                  <input type="hidden" name="_method" value="DELETE">*/}}
+{{/*                  <input class="btn btn-danger" type="submit" value="Supprimer">*/}}
+{{/*                </form>*/}}
+{{/*              </td>*/}}
             </tr>
             {{end}}
           </tbody>
         </table>      
       </div>
-      <div>
-        <p class="text-center h2">Créer un tournoi</p>
-        <form method="POST" action="/tournaments">
-          <div class="form-row">
-            <div class="form-group col-12 col-md-6">
-              <label for="id">Identifiant</label>
-              <input type="text" class="form-control" id="id" name="id" placeholder="Ex: MDP19U11" size="10" required>
-              <small id="idHelp" class="form-text text-muted">Clef utilisée dans les URLS.</small>
-            </div>
-            <div class="form-group col-12 col-md-6">
-              <label for="name">Nom</label>
-              <input type="text" class="form-control" id="name" name="name" placeholder="Ex: U13" size="15" required>
-              <small id="nameHelp" class="form-text text-muted">Affiché sur les écrans de résultats et classements.</small>
-            </div>
-            <div class="form-group col-12 col-md-6">
-              <label for="nbTeams">Nombre d'équipes</label>
-              <input type="number" class="form-control" id="nbTeams" name="nbTeams" value="8" size="1" required min="3" step="1">
-              <small id="mbTeamsHelp" class="form-text text-muted">Nombre d'équipes.</small>
-            </div>
-            <div class="form-group col-12 col-md-6">
-              <label for="nbTeams">Nombre de poules</label>
-              <input type="number" class="form-control" id="nbPools" name="nbPools" value="2" size="1" required min="1" step="1">
-              <small id="nbPoolsHelp" class="form-text text-muted">Nombre de poules.</small>
-            </div>
-            <div class="form-group col-12 col-md-6">
-              <label for="pointsPerWin">Points par victoire</label>
-              <input type="number" class="form-control" id="pointsPerWin" name="pointsPerWin" value="4" size="1" required min="0" step="1">
-              <small id="pointsPerWinHelp" class="form-text text-muted">Points par victoire.</small>
-            </div>  
-            <div class="form-group col-12 col-md-6">
-              <label for="pointsPerDraw">Points par match nul</label>
-              <input type="number" class="form-control" id="pointsPerDraw" name="pointsPerDraw" value="2" size="1" required min="0" step="1">
-              <small id="pointsPerDrawHelp" class="form-text text-muted">Points par match nul.</small>
-            </div>  
-            <div class="form-group col-12 col-md-6">
-              <label for="pointsPerDefeat">Points par défaite</label>
-              <input type="number" class="form-control" id="pointsPerDefeat" name="pointsPerDefeat" value="1" size="1" required min="0" step="1">
-              <small id="pointsPerDefeatHelp" class="form-text text-muted">Points par défaite.</small>
-            </div>  
-            <div class="form-group col-12 col-md-6">
-              <label for="pointsPerDefeat">Points par but marqué</label>
-              <input type="number" class="form-control" id="pointsPerGoal" name="pointsPerGoal" value="0.1" size="3" required min="0" step="0.1">
-              <small id="pointsPerDefeatHelp" class="form-text text-muted">Points par but marqué.</small>
-            </div>  
-            <div class="form-group col-12 col-md-6">
-              <label for="gameDurationMinutes">Durée des matchs (en minutes)</label>
-              <input type="number" class="form-control" id="gameDurationMinutes" name="gameDurationMinutes" value="20" size="2" required min="1">
-              <small id="gameDurationMinutesHelp" class="form-text text-muted">Durée du match en minutes.</small>
-            </div>
-            <div class="form-group col-12 col-md-6">
-              <label for="betweenGamesDurationMinutes">Durée entre deux matchs (en minutes)</label>
-              <input type="number" class="form-control" id="betweenGamesDurationMinutes" name="betweenGamesDurationMinutes" value="4" size="2" required min="0">
-              <small id="betweenGamesDurationMinutesHelp" class="form-text text-muted">Durée entre deux matchs en minutes.</small>
-            </div>
-            <div class="form-group col-12 col-md-6">
-              <label for="startTime">Heure de début du tournoi</label>
-              <input type="text" class="form-control" id="startTime" name="startTime" value="09:00" size="5" required pattern="\d\d:\d\d">
-              <small id="startTimeHelp" class="form-text text-muted">Heure de début du premier match (HH:MM).</small>
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary">Créer</button>
-        </form>
-      </div>
+{{/*      <div>*/}}
+{{/*        <p class="text-center h2">Créer un tournoi</p>*/}}
+{{/*        <form method="POST" action="/tournaments">*/}}
+{{/*          <div class="form-row">*/}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="id">Identifiant</label>*/}}
+{{/*              <input type="text" class="form-control" id="id" name="id" placeholder="Ex: MDP19U11" size="10" required>*/}}
+{{/*              <small id="idHelp" class="form-text text-muted">Clef utilisée dans les URLS.</small>*/}}
+{{/*            </div>*/}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="name">Nom</label>*/}}
+{{/*              <input type="text" class="form-control" id="name" name="name" placeholder="Ex: U13" size="15" required>*/}}
+{{/*              <small id="nameHelp" class="form-text text-muted">Affiché sur les écrans de résultats et classements.</small>*/}}
+{{/*            </div>*/}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="nbTeams">Nombre d'équipes</label>*/}}
+{{/*              <input type="number" class="form-control" id="nbTeams" name="nbTeams" value="8" size="1" required min="3" step="1">*/}}
+{{/*              <small id="mbTeamsHelp" class="form-text text-muted">Nombre d'équipes.</small>*/}}
+{{/*            </div>*/}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="nbTeams">Nombre de poules</label>*/}}
+{{/*              <input type="number" class="form-control" id="nbPools" name="nbPools" value="2" size="1" required min="1" step="1">*/}}
+{{/*              <small id="nbPoolsHelp" class="form-text text-muted">Nombre de poules.</small>*/}}
+{{/*            </div>*/}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="pointsPerWin">Points par victoire</label>*/}}
+{{/*              <input type="number" class="form-control" id="pointsPerWin" name="pointsPerWin" value="4" size="1" required min="0" step="1">*/}}
+{{/*              <small id="pointsPerWinHelp" class="form-text text-muted">Points par victoire.</small>*/}}
+{{/*            </div>  */}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="pointsPerDraw">Points par match nul</label>*/}}
+{{/*              <input type="number" class="form-control" id="pointsPerDraw" name="pointsPerDraw" value="2" size="1" required min="0" step="1">*/}}
+{{/*              <small id="pointsPerDrawHelp" class="form-text text-muted">Points par match nul.</small>*/}}
+{{/*            </div>  */}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="pointsPerDefeat">Points par défaite</label>*/}}
+{{/*              <input type="number" class="form-control" id="pointsPerDefeat" name="pointsPerDefeat" value="1" size="1" required min="0" step="1">*/}}
+{{/*              <small id="pointsPerDefeatHelp" class="form-text text-muted">Points par défaite.</small>*/}}
+{{/*            </div>  */}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="pointsPerDefeat">Points par but marqué</label>*/}}
+{{/*              <input type="number" class="form-control" id="pointsPerGoal" name="pointsPerGoal" value="0.1" size="3" required min="0" step="0.1">*/}}
+{{/*              <small id="pointsPerDefeatHelp" class="form-text text-muted">Points par but marqué.</small>*/}}
+{{/*            </div>  */}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="gameDurationMinutes">Durée des matchs (en minutes)</label>*/}}
+{{/*              <input type="number" class="form-control" id="gameDurationMinutes" name="gameDurationMinutes" value="20" size="2" required min="1">*/}}
+{{/*              <small id="gameDurationMinutesHelp" class="form-text text-muted">Durée du match en minutes.</small>*/}}
+{{/*            </div>*/}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="betweenGamesDurationMinutes">Durée entre deux matchs (en minutes)</label>*/}}
+{{/*              <input type="number" class="form-control" id="betweenGamesDurationMinutes" name="betweenGamesDurationMinutes" value="4" size="2" required min="0">*/}}
+{{/*              <small id="betweenGamesDurationMinutesHelp" class="form-text text-muted">Durée entre deux matchs en minutes.</small>*/}}
+{{/*            </div>*/}}
+{{/*            <div class="form-group col-12 col-md-6">*/}}
+{{/*              <label for="startTime">Heure de début du tournoi</label>*/}}
+{{/*              <input type="text" class="form-control" id="startTime" name="startTime" value="09:00" size="5" required pattern="\d\d:\d\d">*/}}
+{{/*              <small id="startTimeHelp" class="form-text text-muted">Heure de début du premier match (HH:MM).</small>*/}}
+{{/*            </div>*/}}
+{{/*          </div>*/}}
+{{/*          <button type="submit" class="btn btn-primary">Créer</button>*/}}
+{{/*        </form>*/}}
+{{/*      </div>*/}}
 {{end}}

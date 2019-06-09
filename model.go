@@ -12,6 +12,7 @@ type tournament struct {
 	pointsPerDraw   float64
 	pointsPerDefeat float64
 	pointsPerGoal   float64
+	Pools           []pool
 }
 
 type poolMatch struct {
@@ -54,7 +55,7 @@ type pool struct {
 type poolViewModel struct {
 	PoolIndex int
 	PoolName  string
-	Matchs    []poolMatch
+	Matches   []poolMatch
 }
 
 type rankingViewModel struct {

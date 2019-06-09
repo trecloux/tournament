@@ -7,17 +7,34 @@
           <tr>
             <th scope="col">Tournoi</th>
             <th scope="col">Nom</th>
-            <th scope="col">Rencontres</th>
+            <th scope="col">Poules</th>
             <th scope="col">Classement</th>
           </tr>
         </thead>
         <tbody>
-          {{range .tournaments}}
+          {{range $tournament := .tournaments}}
           <tr>
-            <th scope="row">{{.ID}}</th>
-            <td>{{.Name}}</td>
-            <td><a href="/tournaments/{{.ID}}/matchs">Rencontres</a></td>
-            <td><a href="/tournaments/{{.ID}}/ranking">Classement</a></td>
+            <th scope="row">{{$tournament.ID}}</th>
+            <td>{{$tournament.Name}}</td>
+            <td>
+              <ul>
+                <li><a href="/tournaments/{{$tournament.ID}}/matches">Toutes les rencontres</a></li>
+                <li><a href="/tournaments/{{$tournament.ID}}/pools/matches">Rencontres toutes poules</a></li>
+              {{range .Pools}}
+                <li><a href="/tournaments/{{$tournament.ID}}/pools/{{.Index}}/matches">Rencontres poule {{.Name}}</a></li>
+              {{end}}
+                <li><a href="/tournaments/{{$tournament.ID}}/pools/ranking">Classement toutes poules</a></li>
+              {{range .Pools}}
+                <li><a href="/tournaments/{{$tournament.ID}}/pools/{{.Index}}/ranking">Classement poule {{.Name}}</a></li>
+              {{end}}
+              </ul>
+            </td>
+            <td>
+              <ul>
+                <li><a href="/tournaments/{{$tournament.ID}}/ranking-matches">Matchs de classement</a></li>
+                <li><a href="/tournaments/{{$tournament.ID}}/final-ranking">Classement final</a></li>
+              </ul>
+            </td>
           </tr>
           {{end}}
         </tbody>

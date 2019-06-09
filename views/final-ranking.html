@@ -1,0 +1,19 @@
+{{define "content"}}
+  <p class="text-center h2">{{.tournament.Name}} classement final</p>
+  <table class="table table-striped">
+    <thead class="thead-dark">
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Equipe</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .ranking}}
+      <tr>
+        <td>{{.Rank}}</td>
+        <td>{{if .TeamName.Valid }}{{.TeamName.String}}{{ end }}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+{{end}}

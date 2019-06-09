@@ -1,0 +1,7 @@
+{{define "content"}}
+    <p class="text-center h1">Rencontres {{.tournament.Name}}</p>
+    {{range .pools}}
+      {{template "fragment-pool-matches" . }}
+    {{end}}
+    {{template "fragment-ranking-matches" . }}
+{{end}}

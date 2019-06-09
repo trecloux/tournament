@@ -1,0 +1,34 @@
+{{define "content"}}
+    <a href="/admin"><img src="/assets/home.svg"></a>
+    <p class="text-center h1">Matchs de poule {{.tournament.Name}}</p>
+    {{range $pool :=.pools}}
+    <p class="text-center h2">Poule {{$pool.PoolName}}</p>
+    <table class="table table-striped table-sm">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">Heure</th>
+          <th scope="col">Equipe</th>
+          <th scope="col">Score</th>
+          <th scope="col">Score</th>
+          <th scope="col">Equipe</th>
+          <th scope="col">Valider</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $pool.Matches}}
+        <tr id="{{$pool.PoolIndex}}-{{.ID}}">
+          <form method="POST" action="/tournaments/{{$.tournament.ID}}/pools/{{$pool.PoolIndex}}/matches/{{.ID}}/score">
+            <input type="hidden" name="anchor" value="{{$pool.PoolIndex}}-{{.ID}}">
+            <th scope="row">{{.ScheduledAt.Format "15:04"}}</th>
+            <td>{{.HomeTeamName}}</td>
+            <td><input type="number" class="mb-2" maxlength="2" name="homeTeamGoals" value="{{if .HomeTeamGoals.Valid }}{{.HomeTeamGoals.Int64}}{{end}}"></td>
+            <td><input type="number" class="mb-2" maxlength="2" name="visitorTeamGoals" value="{{if .VisitorTeamGoals.Valid }}{{.VisitorTeamGoals.Int64}}{{end}}"></td>
+            <td>{{.VisitorTeamName}}</td>
+            <td><input type="submit" class="btn btn-primary" value="Valider"></td>
+          </form>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{end}}
+{{end}}

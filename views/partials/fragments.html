@@ -1,0 +1,97 @@
+{{define "fragment-pool-matches"}}
+<p class="text-center h2">Poule {{.PoolName}}</p>
+<table class="table table-striped table-sm">
+    <thead class="thead-dark">
+    <tr>
+        <th scope="col">Heure</th>
+        <th scope="col">Equipe</th>
+        <th scope="col">Score</th>
+        <th scope="col">Equipe</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .Matches}}
+        <tr>
+            <td>
+                <div class="font-weight-bold">{{.ScheduledAt.Format "15:04"}}</div>
+                <div style="font-size:10px;">{{.PitchName}}</div>
+            </td>
+            <td>{{.HomeTeamName}}</td>
+            {{if .HomeTeamGoals.Valid }}
+                <td>{{.HomeTeamGoals.Int64}} - {{.VisitorTeamGoals.Int64}}</td>
+            {{else}}
+                <td>&nbsp;</td>
+            {{end}}
+            <td>{{.VisitorTeamName}}</td>
+        </tr>
+    {{end}}
+    </tbody>
+</table>
+{{end}}
+
+{{define "fragment-pool-ranking"}}
+<p class="text-center h2">Poule {{.PoolName}}</p>
+<table class="table table-striped">
+    <thead class="thead-dark">
+    <tr>
+        <th scope="col">#</th>
+        <th scope="col">Equipe</th>
+        <th scope="col">Points</th>
+        <th scope="col">Joués</th>
+        <th scope="col">Victoires</th>
+        <th scope="col">Nuls</th>
+        <th scope="col">Défaites</th>
+        <th scope="col">Buts</th>
+        <th scope="col">Diff</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .TeamRankings}}
+        <tr>
+            <td>{{.Rank}}</td>
+            <td>{{.Name}}</td>
+            <td>{{.Points}}</td>
+            <td>{{.Played}}</td>
+            <td>{{.Wins}}</td>
+            <td>{{.Draws}}</td>
+            <td>{{.Defeats}}</td>
+            <td>{{.Goals}}</td>
+            <td>{{.GoalBalance}}</td>
+        </tr>
+    {{end}}
+    </tbody>
+</table>
+{{end}}
+
+{{define "fragment-ranking-matches"}}
+<p class="text-center h2">Matchs de classement</p>
+<table class="table table-striped table-sm">
+    <thead class="thead-dark">
+    <tr>
+        <th scope="col">Heure</th>
+        <th scope="col">Match</th>
+        <th scope="col">Equipe</th>
+        <th scope="col">Score</th>
+        <th scope="col">Equipe</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .rankingMatches}}
+        <tr>
+            <td>
+                <div class="font-weight-bold">{{.ScheduledAt.Format "15:04"}}</div>
+                <div style="font-size:10px;">{{.PitchName}}</div>
+            </td>
+            <td>{{.Key}}</td>
+            <td>{{.HomeTeamName.String}}</td>
+            {{if .HomeTeamGoals.Valid }}
+                <td>{{.HomeTeamGoals.Int64}} - {{.VisitorTeamGoals.Int64}}</td>
+            {{else}}
+                <td>&nbsp;</td>
+            {{end}}
+            <td>{{.VisitorTeamName.String}}</td>
+        </tr>
+    {{end}}
+    </tbody>
+</table>
+{{end}}

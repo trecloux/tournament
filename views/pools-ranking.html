@@ -1,0 +1,6 @@
+{{define "content"}}
+    <p class="text-center h1">Classement {{.tournament.Name}}</p>
+    {{range .pools}}
+      {{template "fragment-pool-ranking" .}}
+    {{end}}
+{{end}}
