@@ -147,10 +147,11 @@ func getAllTournamentMatches(db *sql.DB) echo.HandlerFunc {
 		pools := loadAllPoolsMatches(db, tournamentID)
 		rankingMatches := tournamentRankingMatches(db, tournamentID)
 		return c.Render(http.StatusOK, "all-matches", echo.Map{
-			"title":          "Rencontres",
-			"tournament":     tournament,
-			"pools":          pools,
-			"rankingMatches": rankingMatches,
+			"title":                "Rencontres",
+			"tournament":           tournament,
+			"pools":                pools,
+			"rankingMatches":       rankingMatches,
+			"uniqRankingPitchName": uniqRankingPitchName(rankingMatches),
 		})
 	}
 }
@@ -172,11 +173,22 @@ func getTournamentRankingMatches(db *sql.DB) echo.HandlerFunc {
 		tournament := selectTournament(db, tournamentID)
 		matches := tournamentRankingMatches(db, tournamentID)
 		return c.Render(http.StatusOK, "ranking-matches", echo.Map{
-			"title":          "Rencontres",
-			"tournament":     tournament,
-			"rankingMatches": matches,
+			"title":                "Rencontres",
+			"tournament":           tournament,
+			"rankingMatches":       matches,
+			"uniqRankingPitchName": uniqRankingPitchName(matches),
 		})
 	}
+}
+
+func uniqRankingPitchName(matches []rankingMatch) sql.NullString {
+	pitchNames := funk.Map(matches, func(match rankingMatch) string { return match.PitchName }).([]string)
+	pitchNames = funk.UniqString(pitchNames)
+	uniqPitchName := sql.NullString{String: "", Valid: false}
+	if len(pitchNames) == 1 {
+		uniqPitchName = sql.NullString{String: pitchNames[0], Valid: true}
+	}
+	return uniqPitchName
 }
 
 func getPoolMatches(db *sql.DB) echo.HandlerFunc {
@@ -252,10 +264,19 @@ func loadAllPoolsMatches(db *sql.DB, tournamentID string) []poolViewModel {
 }
 
 func loadPoolMatches(db *sql.DB, pool pool) poolViewModel {
+	matches := selectTournamentPoolMatches(db, pool.TournamentID, pool.Index)
+	pitchNames := funk.Map(matches, func(match poolMatch) string { return match.PitchName }).([]string)
+	pitchNames = funk.UniqString(pitchNames)
+	uniqPitchName := sql.NullString{String: "", Valid: false}
+	if len(pitchNames) == 1 {
+		uniqPitchName = sql.NullString{String: pitchNames[0], Valid: true}
+	}
+
 	return poolViewModel{
-		PoolIndex: pool.Index,
-		PoolName:  pool.Name,
-		Matches:   selectTournamentPoolMatches(db, pool.TournamentID, pool.Index),
+		PoolIndex:     pool.Index,
+		PoolName:      pool.Name,
+		Matches:       matches,
+		UniqPitchName: uniqPitchName,
 	}
 }
 func getAllTournamentPoolsRanking(db *sql.DB) echo.HandlerFunc {

@@ -59,9 +59,10 @@ type pool struct {
 }
 
 type poolViewModel struct {
-	PoolIndex int
-	PoolName  string
-	Matches   []poolMatch
+	PoolIndex     int
+	PoolName      string
+	Matches       []poolMatch
+	UniqPitchName sql.NullString
 }
 
 type rankingViewModel struct {
