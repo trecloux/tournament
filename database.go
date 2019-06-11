@@ -200,11 +200,11 @@ func selectTournamentPoolRanking(db *sql.DB, tournamentID string, poolIndex int)
 			  AND home_team_goals IS NOT NULL 
 			  AND visitor_team_goals IS NOT NULL
 		), team_matches AS (
-			SELECT team.id AS id, team.name AS name, home_team_goals AS team_goals, visitor_team_goals AS opponent_goals
+			SELECT team.id AS id, team.name AS name, finished_games.id, home_team_goals AS team_goals, visitor_team_goals AS opponent_goals
 			FROM team 
 			JOIN finished_games ON finished_games.home_team_id = team.id AND finished_games.tournament_id = team.tournament_id
 			UNION
-			SELECT team.id AS id, team.name AS name, visitor_team_goals AS team_goals, home_team_goals AS opponent_goals
+			SELECT team.id AS id, team.name AS name, finished_games.id, visitor_team_goals AS team_goals, home_team_goals AS opponent_goals
 			FROM team 
 			JOIN finished_games ON finished_games.visitor_team_id = team.id AND finished_games.tournament_id = team.tournament_id
 		), team_result AS (
