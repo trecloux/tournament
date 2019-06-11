@@ -36,12 +36,13 @@
     <tr>
         <th scope="col">#</th>
         <th scope="col">Equipe</th>
-        <th scope="col">Points</th>
-        <th scope="col">Joués</th>
-        <th scope="col">Victoires</th>
-        <th scope="col">Nuls</th>
-        <th scope="col">Défaites</th>
-        <th scope="col">Buts</th>
+        <th scope="col">Pts</th>
+        <th scope="col">J</th>
+        <th scope="col">V</th>
+        <th scope="col">N</th>
+        <th scope="col">D</th>
+        <th scope="col">Bp</th>
+        <th scope="col">Bc</th>
         <th scope="col">Diff</th>
     </tr>
     </thead>
@@ -55,7 +56,8 @@
             <td>{{.Wins}}</td>
             <td>{{.Draws}}</td>
             <td>{{.Defeats}}</td>
-            <td>{{.Goals}}</td>
+            <td>{{.TeamGoals}}</td>
+            <td>{{.OpponentGoals}}</td>
             <td>{{.GoalBalance}}</td>
         </tr>
     {{end}}

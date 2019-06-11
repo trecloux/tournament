@@ -37,7 +37,7 @@ type rankingMatch struct {
 	HomeTeamSourceRankingMatchWinner    sql.NullBool
 	HomeTeamName                        sql.NullString
 	HomeTeamGoals                       sql.NullInt64
-	HomeTeamID	                        sql.NullInt64
+	HomeTeamID                          sql.NullInt64
 	VisitorTeamPoolIndex                sql.NullInt64
 	VisitorTeamPoolRank                 sql.NullInt64
 	VisitorTeamSourceRankingMatch       sql.NullString
@@ -45,9 +45,9 @@ type rankingMatch struct {
 	VisitorTeamName                     sql.NullString
 	VisitorTeamGoals                    sql.NullInt64
 	VisitorTeamID                       sql.NullInt64
-	WinnerTeamID						sql.NullInt64
-	LooserTeamID						sql.NullInt64
-	ValidTeams							bool
+	WinnerTeamID                        sql.NullInt64
+	LooserTeamID                        sql.NullInt64
+	ValidTeams                          bool
 	PitchName                           string
 	PenaltyShootOutWinner               string
 }
@@ -77,16 +77,17 @@ type team struct {
 }
 
 type teamRanking struct {
-	ID          int
-	Name        string
-	Played      int
-	Wins        int
-	Draws       int
-	Defeats     int
-	Goals       int
-	GoalBalance int
-	Points      float64
-	Rank        int
+	ID            int
+	Name          string
+	Played        int
+	Wins          int
+	Draws         int
+	Defeats       int
+	TeamGoals     int
+	OpponentGoals int
+	GoalBalance   int
+	Points        float64
+	Rank          int
 }
 
 type tournamentFinalRanking struct {
