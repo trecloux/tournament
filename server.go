@@ -26,6 +26,10 @@ func main() {
 	e := echo.New()
 	e.Debug = true
 
+	e.Server.ReadTimeout = 5 * time.Second
+	e.Server.WriteTimeout = 10 * time.Second
+	e.Server.IdleTimeout = 120 * time.Second
+
 	e.Renderer = &echoview.ViewEngine{
 		ViewEngine: gorice.NewWithConfig(
 			rice.MustFindBox("views"),
