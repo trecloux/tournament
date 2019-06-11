@@ -37,13 +37,19 @@ type rankingMatch struct {
 	HomeTeamSourceRankingMatchWinner    sql.NullBool
 	HomeTeamName                        sql.NullString
 	HomeTeamGoals                       sql.NullInt64
+	HomeTeamID	                        sql.NullInt64
 	VisitorTeamPoolIndex                sql.NullInt64
 	VisitorTeamPoolRank                 sql.NullInt64
 	VisitorTeamSourceRankingMatch       sql.NullString
 	VisitorTeamSourceRankingMatchWinner sql.NullBool
 	VisitorTeamName                     sql.NullString
 	VisitorTeamGoals                    sql.NullInt64
+	VisitorTeamID                       sql.NullInt64
+	WinnerTeamID						sql.NullInt64
+	LooserTeamID						sql.NullInt64
+	ValidTeams							bool
 	PitchName                           string
+	PenaltyShootOutWinner               string
 }
 
 type pool struct {

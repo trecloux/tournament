@@ -135,6 +135,7 @@ func rankingMatchesScores(db *sql.DB) echo.HandlerFunc {
 			"title":          "Scores",
 			"tournament":     tournament,
 			"rankingMatches": rankingMatches,
+			"invalidScore":	  c.FormValue("error") == "invalid_score",
 		})
 	}
 }
@@ -197,6 +198,16 @@ func tournamentRankingMatches(db *sql.DB, tournamentID string) []rankingMatch {
 	matches := selectTournamentRankingMatches(db, tournamentID)
 	pools := selectTournamentPools(db, tournamentID)
 	matches = funk.Map(matches, func(match rankingMatch) rankingMatch {
+		match.ValidTeams = match.HomeTeamName.Valid && match.VisitorTeamName.Valid
+		if match.HomeTeamGoals.Valid && match.VisitorTeamGoals.Valid && match.HomeTeamGoals.Int64 == match.VisitorTeamGoals.Int64 {
+			if match.WinnerTeamID.Int64 == match.HomeTeamID.Int64 {
+				match.PenaltyShootOutWinner = "home"
+			} else {
+				match.PenaltyShootOutWinner = "visitor"
+			}
+		} else {
+			match.PenaltyShootOutWinner = "none"
+		}
 		if !match.HomeTeamName.Valid {
 			match.HomeTeamName = rankingMatchTeamName(pools, match.HomeTeamPoolIndex, match.HomeTeamPoolRank, match.HomeTeamSourceRankingMatch, match.HomeTeamSourceRankingMatchWinner)
 		}
@@ -414,18 +425,30 @@ func postRankingMatchScore(db *sql.DB) echo.HandlerFunc {
 		key := c.Param("key")
 		homeTeamGoals, _ := strconv.Atoi(c.FormValue("homeTeamGoals"))
 		visitorTeamGoals, _ := strconv.Atoi(c.FormValue("visitorTeamGoals"))
-		saveRankingMatchScore(db, tournamentID, key, homeTeamGoals, visitorTeamGoals)
+		penaltyShootOutWinner := c.FormValue("penaltyShootOutWinner")
+		if !validRankingMatchScore(homeTeamGoals, visitorTeamGoals, penaltyShootOutWinner) {
+			return c.Redirect(http.StatusSeeOther, "/admin/tournaments/"+tournamentID+"/ranking-matches?error=invalid_score")
+		}
 		homeTeamID, visitorTeamID := selectRankingMatchTeamIDs(db, tournamentID, key)
 		var winnerTeamID int
 		var looserTeamID int
-		if homeTeamGoals > visitorTeamGoals {
+		if homeTeamGoals > visitorTeamGoals || penaltyShootOutWinner == "home" {
 			winnerTeamID = homeTeamID
 			looserTeamID = visitorTeamID
-		} else {
+		} else if homeTeamGoals < visitorTeamGoals  || penaltyShootOutWinner == "visitor" {
 			winnerTeamID = visitorTeamID
 			looserTeamID = homeTeamID
 		}
+		saveRankingMatchScore(db, tournamentID, key, homeTeamGoals, visitorTeamGoals, winnerTeamID, looserTeamID)
 		updateRankingMatchFromSourceRankingMatch(db, tournamentID, key, winnerTeamID, looserTeamID)
 		return c.Redirect(http.StatusSeeOther, "/admin/tournaments/"+tournamentID+"/ranking-matches")
+	}
+}
+
+func validRankingMatchScore(homeTeamGoals int, visitorTeamGoals int, penaltyShootOutWinner string) bool {
+	if homeTeamGoals == visitorTeamGoals {
+		return penaltyShootOutWinner == "home" || penaltyShootOutWinner == "visitor"
+	} else {
+		return penaltyShootOutWinner == "none"
 	}
 }
