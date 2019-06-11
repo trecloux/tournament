@@ -598,12 +598,65 @@ func selectTournamentFinalRanking(db *sql.DB, tournamentID string) []tournamentF
 		SELECT winner_final_rank AS rank FROM ranking_match WHERE tournament_id = $1 AND winner_final_rank IS NOT NULL
 		UNION
 		SELECT looser_final_rank AS rank FROM ranking_match WHERE tournament_id = $1 AND looser_final_rank IS NOT NULL
-	)
-	SELECT ranks.rank, team.name
+	), all_matches AS (
+	  SELECT home_team_id AS team_id, home_team_goals AS team_goals, visitor_team_goals AS opponent_goals 
+	  FROM pool_match 
+	  WHERE tournament_id=$1
+	  UNION ALL
+	  SELECT visitor_team_id AS team_id, visitor_team_goals AS team_goals, home_team_goals AS opponent_goals 
+	  FROM pool_match 
+	  WHERE tournament_id=$1
+	  UNION ALL
+	  SELECT home_team_id AS team_id, home_team_goals AS team_goals, visitor_team_goals AS opponent_goals 
+	  FROM ranking_match 
+	  WHERE tournament_id=$1
+	  UNION ALL
+	  SELECT visitor_team_id AS team_id, visitor_team_goals AS team_goals, home_team_goals AS opponent_goals 
+	  FROM ranking_match 
+	  WHERE tournament_id=$1
+	), team_summary AS (
+	  SELECT team_id, SUM(team_goals) AS team_goals, SUM(opponent_goals) AS opponent_goals, (SUM(team_goals) - SUM(opponent_goals)) AS goal_balance
+	  FROM all_matches
+	  GROUP BY team_id
+	), attack_defense_rank AS (
+   	  SELECT team_id, team_goals, opponent_goals, goal_balance,
+			RANK() OVER (ORDER BY team_goals DESC, goal_balance DESC) AS attack_rank,
+			RANK() OVER (ORDER BY opponent_goals ASC, goal_balance DESC) AS defense_rank
+	  FROM team_summary
+    )
+	SELECT ranks.rank, team.name, team_goals, opponent_goals, goal_balance, attack_rank, defense_rank
 	FROM ranks
 	LEFT JOIN ranked_team ON ranks.rank = ranked_team.rank
 	LEFT JOIN team ON team.tournament_id = $1 AND team.id=ranked_team.team_id
+	LEFT JOIN attack_defense_rank ON team.id = attack_defense_rank.team_id
 	ORDER by ranks.rank 
+	`
+	rows, err := db.Query(sql, tournamentID)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	slice := make([]tournamentFinalRanking, 0)
+	for rows.Next() {
+		row := tournamentFinalRanking{}
+		err2 := rows.Scan(&row.Rank, &row.TeamName, &row.TeamGoals, &row.OpponentGoals, &row.GoalBalance, &row.AttackRank, &row.DefenseRank)
+		if err2 != nil {
+			panic(err2)
+		}
+		slice = append(slice, row)
+	}
+	return slice
+}
+
+func selectTournamentBestAttackDefense(db *sql.DB, tournamentID string) []tournamentFinalRanking {
+	sql := `
+		SELECT team.id AS id, team.name AS name, finished_games.id, home_team_goals AS team_goals, visitor_team_goals AS opponent_goals
+		FROM team 
+		JOIN finished_games ON finished_games.home_team_id = team.id AND finished_games.tournament_id = team.tournament_id
+		UNION
+		SELECT team.id AS id, team.name AS name, finished_games.id, visitor_team_goals AS team_goals, home_team_goals AS opponent_goals
+		FROM team 
+		JOIN finished_games ON finished_games.visitor_team_id = team.id AND finished_games.tournament_id = team.tournament_id
 	`
 	rows, err := db.Query(sql, tournamentID)
 	if err != nil {

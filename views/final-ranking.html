@@ -5,6 +5,11 @@
     <tr>
       <th scope="col">#</th>
       <th scope="col">Equipe</th>
+      <th scope="col">Bp</th>
+      <th scope="col">Bc</th>
+      <th scope="col">Diff</th>
+      <th scope="col"># Attaque</th>
+      <th scope="col"># Défense</th>
     </tr>
     </thead>
     <tbody>
@@ -12,6 +17,11 @@
       <tr>
         <td>{{.Rank}}</td>
         <td>{{if .TeamName.Valid }}{{.TeamName.String}}{{ end }}</td>
+        <td>{{if .TeamGoals.Valid }}{{.TeamGoals.Int64}}{{ end }}</td>
+        <td>{{if .OpponentGoals.Valid }}{{.OpponentGoals.Int64}}{{ end }}</td>
+        <td>{{if .GoalBalance.Valid }}{{.GoalBalance.Int64}}{{ end }}</td>
+        <td>{{if .AttackRank.Valid }}{{.AttackRank.Int64}}{{ end }}</td>
+        <td>{{if .DefenseRank.Valid }}{{.DefenseRank.Int64}}{{ end }}</td>
       </tr>
     {{end}}
     </tbody>

@@ -91,6 +91,11 @@ type teamRanking struct {
 }
 
 type tournamentFinalRanking struct {
-	Rank     int
-	TeamName sql.NullString
+	Rank          int
+	TeamName      sql.NullString
+	TeamGoals     sql.NullInt64
+	OpponentGoals sql.NullInt64
+	GoalBalance   sql.NullInt64
+	AttackRank    sql.NullInt64
+	DefenseRank   sql.NullInt64
 }

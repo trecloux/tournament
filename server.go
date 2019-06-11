@@ -135,7 +135,7 @@ func rankingMatchesScores(db *sql.DB) echo.HandlerFunc {
 			"title":          "Scores",
 			"tournament":     tournament,
 			"rankingMatches": rankingMatches,
-			"invalidScore":	  c.FormValue("error") == "invalid_score",
+			"invalidScore":   c.FormValue("error") == "invalid_score",
 		})
 	}
 }
@@ -262,7 +262,6 @@ func getAllTournamentPoolsRanking(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
-		//finalRanking := selectTournamentFinalRanking(db, tournamentID)
 		return c.Render(http.StatusOK, "pools-ranking", echo.Map{
 			"title":      "Classements",
 			"tournament": tournament,
@@ -435,7 +434,7 @@ func postRankingMatchScore(db *sql.DB) echo.HandlerFunc {
 		if homeTeamGoals > visitorTeamGoals || penaltyShootOutWinner == "home" {
 			winnerTeamID = homeTeamID
 			looserTeamID = visitorTeamID
-		} else if homeTeamGoals < visitorTeamGoals  || penaltyShootOutWinner == "visitor" {
+		} else if homeTeamGoals < visitorTeamGoals || penaltyShootOutWinner == "visitor" {
 			winnerTeamID = visitorTeamID
 			looserTeamID = homeTeamID
 		}
