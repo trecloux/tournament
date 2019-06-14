@@ -3,17 +3,16 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"html/template"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
-
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/foolin/goview"
 	"github.com/foolin/goview/supports/echoview"
 	"github.com/foolin/goview/supports/gorice"
 	"github.com/thoas/go-funk"
+	"html/template"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -118,7 +117,9 @@ func poolsMatchesScores(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
-		pools := loadAllPoolsMatches(db, tournamentID)
+		from := timeParam(c,"from")
+		to := timeParam(c,"to")
+		pools := loadAllPoolsMatches(db, tournamentID, from, to)
 		return c.Render(http.StatusOK, "admin/pools-matches", echo.Map{
 			"title":      "Scores",
 			"tournament": tournament,
@@ -130,7 +131,7 @@ func rankingMatchesScores(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
-		rankingMatches := tournamentRankingMatches(db, tournamentID)
+		rankingMatches := tournamentRankingMatches(db, tournamentID, NullTime{time.Time{}, false}, NullTime{time.Time{}, false})
 		return c.Render(http.StatusOK, "admin/ranking-matches", echo.Map{
 			"title":          "Scores",
 			"tournament":     tournament,
@@ -144,8 +145,10 @@ func getAllTournamentMatches(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
-		pools := loadAllPoolsMatches(db, tournamentID)
-		rankingMatches := tournamentRankingMatches(db, tournamentID)
+		from := timeParam(c,"from")
+		to := timeParam(c,"to")
+		pools := loadAllPoolsMatches(db, tournamentID, from, to)
+		rankingMatches := tournamentRankingMatches(db, tournamentID, from, to)
 		return c.Render(http.StatusOK, "all-matches", echo.Map{
 			"title":                "Rencontres",
 			"tournament":           tournament,
@@ -159,7 +162,9 @@ func getAllTournamentPoolsMatches(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
-		pools := loadAllPoolsMatches(db, tournamentID)
+		from := timeParam(c,"from")
+		to := timeParam(c,"to")
+		pools := loadAllPoolsMatches(db, tournamentID, from, to)
 		return c.Render(http.StatusOK, "pools-matches", echo.Map{
 			"title":      "Rencontres",
 			"tournament": tournament,
@@ -171,7 +176,9 @@ func getTournamentRankingMatches(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
-		matches := tournamentRankingMatches(db, tournamentID)
+		from := timeParam(c,"from")
+		to := timeParam(c,"to")
+		matches := tournamentRankingMatches(db, tournamentID, from, to)
 		return c.Render(http.StatusOK, "ranking-matches", echo.Map{
 			"title":                "Rencontres",
 			"tournament":           tournament,
@@ -196,8 +203,11 @@ func getPoolMatches(db *sql.DB) echo.HandlerFunc {
 		tournamentID := c.Param("id")
 		tournament := selectTournament(db, tournamentID)
 		poolIndex, _ := strconv.Atoi(c.Param("poolIndex"))
+		from := timeParam(c,"from")
+		to := timeParam(c,"to")
 		_pool := selectTournamentPool(db, tournamentID, poolIndex)
-		poolMatches := loadPoolMatches(db, _pool)
+		poolMatches := loadPoolMatches(db, _pool, from, to)
+
 		return c.Render(http.StatusOK, "pool-matches", echo.Map{
 			"title":      "Rencontres poule" + _pool.Name,
 			"tournament": tournament,
@@ -206,8 +216,19 @@ func getPoolMatches(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
-func tournamentRankingMatches(db *sql.DB, tournamentID string) []rankingMatch {
-	matches := selectTournamentRankingMatches(db, tournamentID)
+func timeParam(c echo.Context, name string) NullTime {
+	fromStr := c.FormValue(name)
+	var from NullTime
+	if fromStr == "" {
+		from = NullTime{time.Time{}, false}
+	} else {
+		from = NullTime{parseTime(fromStr), true}
+	}
+	return from
+}
+
+func tournamentRankingMatches(db *sql.DB, tournamentID string, from NullTime, to NullTime) []rankingMatch {
+	matches := selectTournamentRankingMatches(db, tournamentID, from, to)
 	pools := selectTournamentPools(db, tournamentID)
 	matches = funk.Map(matches, func(match rankingMatch) rankingMatch {
 		match.ValidTeams = match.HomeTeamName.Valid && match.VisitorTeamName.Valid
@@ -254,17 +275,17 @@ func rankingMatchTeamName(pools []pool, poolIndex sql.NullInt64, poolRank sql.Nu
 	}
 	return sql.NullString{String: name, Valid: true}
 }
-func loadAllPoolsMatches(db *sql.DB, tournamentID string) []poolViewModel {
+func loadAllPoolsMatches(db *sql.DB, tournamentID string, from NullTime, to NullTime) []poolViewModel {
 	pools := selectTournamentPools(db, tournamentID)
 	poolViews := make([]poolViewModel, 0)
 	for _, pool := range pools {
-		poolViews = append(poolViews, loadPoolMatches(db, pool))
+		poolViews = append(poolViews, loadPoolMatches(db, pool, from, to))
 	}
 	return poolViews
 }
 
-func loadPoolMatches(db *sql.DB, pool pool) poolViewModel {
-	matches := selectTournamentPoolMatches(db, pool.TournamentID, pool.Index)
+func loadPoolMatches(db *sql.DB, pool pool, from NullTime, to NullTime) poolViewModel {
+	matches := selectTournamentPoolMatches(db, pool.TournamentID, pool.Index, from, to)
 	pitchNames := funk.Map(matches, func(match poolMatch) string { return match.PitchName }).([]string)
 	pitchNames = funk.UniqString(pitchNames)
 	uniqPitchName := sql.NullString{String: "", Valid: false}

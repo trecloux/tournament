@@ -100,3 +100,9 @@ type tournamentFinalRanking struct {
 	AttackRank    sql.NullInt64
 	DefenseRank   sql.NullInt64
 }
+
+type NullTime struct {
+	Time  time.Time
+	Valid bool // Valid is true if Time is not NULL
+}
+

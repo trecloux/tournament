@@ -12,7 +12,7 @@ import (
 const timeFormat = "15:04"
 
 func initDB() *sql.DB {
-	db, err := sql.Open("sqlite3", "tournament.db")
+	db, err := sql.Open("sqlite3", "tournament.db?cache=shared&mode=rwc")
 	if err != nil {
 		panic(err)
 	}
@@ -121,17 +121,30 @@ func selectAllTournamentPoolMatches(db *sql.DB, tournamentID string) []poolMatch
 	return fetchPoolMatches(db.Query(sql, tournamentID))
 }
 
-func selectTournamentPoolMatches(db *sql.DB, tournamentID string, poolIndex int) []poolMatch {
+func selectTournamentPoolMatches(db *sql.DB, tournamentID string, poolIndex int, from NullTime, to NullTime) []poolMatch {
+	timeFilter := timeFilter(from, to)
 	sql := `
-		SELECT match.id, match.pool_index, match.scheduled_at, home_team.name, visitor_team.name, match.home_team_goals, match.visitor_team_goals, pitch.name AS pitch_name
-		FROM pool_match match 
-		JOIN team home_team ON match.home_team_id = home_team.id AND home_team.tournament_id = $1
-		JOIN team visitor_team ON match.visitor_team_id = visitor_team.id AND visitor_team.tournament_id = $1
-		JOIN pitch ON match.pitch_id = pitch.id AND pitch.tournament_id = $1
-		WHERE match.tournament_id = $1 AND match.pool_index = $2
-		ORDER BY scheduled_at
-	`
+			SELECT match.id, match.pool_index, match.scheduled_at, home_team.name, visitor_team.name, match.home_team_goals, match.visitor_team_goals, pitch.name AS pitch_name
+			FROM pool_match match 
+			JOIN team home_team ON match.home_team_id = home_team.id AND home_team.tournament_id = $1
+			JOIN team visitor_team ON match.visitor_team_id = visitor_team.id AND visitor_team.tournament_id = $1
+			JOIN pitch ON match.pitch_id = pitch.id AND pitch.tournament_id = $1
+			WHERE match.tournament_id = $1 AND match.pool_index = $2
+		`
+	sql = sql + timeFilter
+	sql = sql + "ORDER BY scheduled_at"
 	return fetchPoolMatches(db.Query(sql, tournamentID, poolIndex))
+}
+
+func timeFilter(from NullTime, to NullTime) string {
+	timeFilter := ""
+	if from.Valid {
+		timeFilter = "AND scheduled_at >= '" + formatTime(from.Time) + "' "
+	}
+	if to.Valid {
+		timeFilter = "AND scheduled_at < '" + formatTime(to.Time) + "' "
+	}
+	return timeFilter
 }
 
 func fetchPoolMatches(rows *sql.Rows, err error) []poolMatch {
@@ -153,7 +166,8 @@ func fetchPoolMatches(rows *sql.Rows, err error) []poolMatch {
 	return slice
 }
 
-func selectTournamentRankingMatches(db *sql.DB, tournamentID string) []rankingMatch {
+func selectTournamentRankingMatches(db *sql.DB, tournamentID string, from NullTime, to NullTime) []rankingMatch {
+	timeFilter := timeFilter(from, to)
 	sql := `
 		SELECT match.key, scheduled_at,
 			home_team.name,    home_team_pool_index,    home_team_pool_rank,    home_team_source_ranking_match,    home_team_source_ranking_match_winner,    home_team_goals,    home_team_id,
@@ -165,8 +179,9 @@ func selectTournamentRankingMatches(db *sql.DB, tournamentID string) []rankingMa
 		LEFT JOIN team home_team ON match.home_team_id = home_team.id AND home_team.tournament_id = $1
 		LEFT JOIN team visitor_team ON match.visitor_team_id = visitor_team.id AND visitor_team.tournament_id = $1
 		WHERE match.tournament_id = $1
-		ORDER BY scheduled_at
 	`
+	sql = sql + timeFilter
+	sql = sql +	" ORDER BY scheduled_at"
 	rows, err := db.Query(sql, tournamentID)
 	if err != nil {
 		panic(err)
@@ -330,17 +345,13 @@ func selectTournamentPool(db *sql.DB, tournamentID string, poolIndex int) pool {
 		FROM pool
 		WHERE tournament_id = $1 AND pool_index=$2
 	`
-	rows, err := db.Query(sql, tournamentID, poolIndex)
-	if err != nil {
-		panic(err)
-	}
-	rows.Next()
-	row := pool{}
-	err2 := rows.Scan(&row.TournamentID, &row.Index, &row.Name)
+	row := db.QueryRow(sql, tournamentID, poolIndex)
+	_pool := pool{}
+	err2 := row.Scan(&_pool.TournamentID, &_pool.Index, &_pool.Name)
 	if err2 != nil {
 		panic(err2)
 	}
-	return row
+	return _pool
 }
 func selectTournamentPoolTeams(db *sql.DB, tournamentID string, poolIndex int) []team {
 	sql := `
@@ -678,4 +689,7 @@ func selectTournamentBestAttackDefense(db *sql.DB, tournamentID string) []tourna
 func parseTime(timeStr string) time.Time {
 	t, _ := time.Parse(timeFormat, timeStr)
 	return t
+}
+func formatTime(t time.Time) string {
+	return t.Format(timeFormat)
 }
