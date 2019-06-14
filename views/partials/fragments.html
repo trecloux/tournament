@@ -3,7 +3,7 @@
 {{if .UniqPitchName.Valid}}
 <p class="text-center h4">Terrain {{.UniqPitchName.String}}</p>
 {{end}}
-<table class="table table-striped">
+<table class="table table-striped {{if gt (len .Matches) 12}} table-sm {{end}}">
     <thead class="thead-dark">
     <tr>
         <th scope="col">Heure</th>
