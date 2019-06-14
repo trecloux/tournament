@@ -89,6 +89,8 @@ type teamRanking struct {
 	GoalBalance   int
 	Points        float64
 	Rank          int
+	AttackRank    int
+	DefenseRank   int
 }
 
 type tournamentFinalRanking struct {

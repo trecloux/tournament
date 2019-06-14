@@ -61,8 +61,8 @@
             <td>{{.Wins}}</td>
             <td>{{.Draws}}</td>
             <td>{{.Defeats}}</td>
-            <td>{{.TeamGoals}}</td>
-            <td>{{.OpponentGoals}}</td>
+            <td>{{.TeamGoals}}{{if eq .AttackRank 1}}*{{end}}</td>
+            <td>{{.OpponentGoals}}{{if eq .DefenseRank 1}}*{{end}}</td>
             <td>{{.GoalBalance}}</td>
         </tr>
     {{end}}

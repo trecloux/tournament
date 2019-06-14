@@ -269,7 +269,9 @@ func selectTournamentPoolRanking(db *sql.DB, tournamentID string, poolIndex int)
 			COALESCE(opponent_goals, 0),
 			COALESCE(goal_balance, 0),
 			COALESCE(points, 0),
-			RANK () OVER ( ORDER BY points DESC, goal_balance DESC, name ) rank
+			RANK() OVER ( ORDER BY points DESC, goal_balance DESC, name ) rank,
+			RANK() OVER (ORDER BY team_goals DESC, goal_balance DESC) AS attack_rank,
+			RANK() OVER (ORDER BY opponent_goals ASC, goal_balance DESC) AS defense_rank
 		FROM team 
 		LEFT JOIN team_summary ON team.id = team_summary.id
 		WHERE team.tournament_id = $1 AND team.pool_index = $2
@@ -283,7 +285,7 @@ func selectTournamentPoolRanking(db *sql.DB, tournamentID string, poolIndex int)
 	slice := make([]teamRanking, 0)
 	for rows.Next() {
 		row := teamRanking{}
-		err2 := rows.Scan(&row.ID, &row.Name, &row.Played, &row.Wins, &row.Draws, &row.Defeats, &row.TeamGoals, &row.OpponentGoals, &row.GoalBalance, &row.Points, &row.Rank)
+		err2 := rows.Scan(&row.ID, &row.Name, &row.Played, &row.Wins, &row.Draws, &row.Defeats, &row.TeamGoals, &row.OpponentGoals, &row.GoalBalance, &row.Points, &row.Rank, &row.AttackRank, &row.DefenseRank)
 		if err2 != nil {
 			panic(err2)
 		}
